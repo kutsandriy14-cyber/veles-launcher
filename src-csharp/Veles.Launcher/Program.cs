@@ -31,12 +31,12 @@ namespace Veles.Launcher
         private readonly Color Background = Color.FromArgb(16, 11, 8);
         private readonly Color Card = Color.FromArgb(27, 21, 18);
         private readonly Color Orange = Color.FromArgb(255, 122, 25);
-        private readonly Color Text = Color.FromArgb(245, 238, 232);
+        private readonly Color TextColor = Color.FromArgb(245, 238, 232);
         private readonly Color Muted = Color.FromArgb(163, 149, 141);
 
         public LauncherForm()
         {
-            Text = "Veles Launcher"; Width = 1040; Height = 680; MinimumSize = new Size(900, 600); BackColor = Background; ForeColor = Text; StartPosition = FormStartPosition.CenterScreen;
+            Text = "Veles Launcher"; Width = 1040; Height = 680; MinimumSize = new Size(900, 600); BackColor = Background; ForeColor = TextColor; StartPosition = FormStartPosition.CenterScreen;
             BuildUi(); Shown += async (s, e) => await RefreshAsync();
         }
 
@@ -45,8 +45,8 @@ namespace Veles.Launcher
             var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(30, 24, 30, 20), RowCount = 5, ColumnCount = 2, BackColor = Background };
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 155)); root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 76)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50)); root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50)); Controls.Add(root);
-            var brand = new Label { Text = "V  VELES LAUNCHER\n     TerraFirmaGreg: Modern", AutoSize = true, Font = new Font("Segoe UI", 12, FontStyle.Bold), ForeColor = Text, Dock = DockStyle.Fill };
-            var site = Button("Сайт сервера", Color.FromArgb(33, 25, 19), Text); site.Anchor = AnchorStyles.Top | AnchorStyles.Right; site.Click += (s, e) => OpenUrl("https://veles-saite.vercel.app/");
+            var brand = new Label { Text = "V  VELES LAUNCHER\n     TerraFirmaGreg: Modern", AutoSize = true, Font = new Font("Segoe UI", 12, FontStyle.Bold), ForeColor = TextColor, Dock = DockStyle.Fill };
+            var site = Button("Сайт сервера", Color.FromArgb(33, 25, 19), TextColor); site.Anchor = AnchorStyles.Top | AnchorStyles.Right; site.Click += (s, e) => OpenUrl("https://veles-saite.vercel.app/");
             root.Controls.Add(brand, 0, 0); root.Controls.Add(site, 1, 0);
             var hero = new Panel { Dock = DockStyle.Fill }; root.Controls.Add(hero, 0, 1); root.SetColumnSpan(hero, 2);
             var title = new Label { Text = "TerraFirmaGreg: Modern", AutoSize = true, Location = new Point(0, 20), Font = new Font("Segoe UI", 28, FontStyle.Bold), ForeColor = Orange };
@@ -60,20 +60,20 @@ namespace Veles.Launcher
 
         private Control MakeServerCard()
         {
-            var panel = CardPanel(); panel.Padding = new Padding(22); panel.Controls.Add(Label("◈  ПОДКЛЮЧЕНИЕ", 0, 0, 17, Text, true)); panel.Controls.Add(Label("IP АДРЕС СЕРВЕРА", 0, 48, 9, Muted, true)); _address = Label("—", 0, 68, 19, Text, true); panel.Controls.Add(_address);
-            var copy = Button("Копировать", Color.FromArgb(43, 28, 20), Text); copy.Location = new Point(240, 64); copy.Width = 110; copy.Click += (s, e) => { if (_address.Text != "—") { Clipboard.SetText(_address.Text); ShowNotice("IP сервера скопирован.", false); } }; panel.Controls.Add(copy);
+            var panel = CardPanel(); panel.Padding = new Padding(22); panel.Controls.Add(Label("◈  ПОДКЛЮЧЕНИЕ", 0, 0, 17, TextColor, true)); panel.Controls.Add(Label("IP АДРЕС СЕРВЕРА", 0, 48, 9, Muted, true)); _address = Label("—", 0, 68, 19, TextColor, true); panel.Controls.Add(_address);
+            var copy = Button("Копировать", Color.FromArgb(43, 28, 20), TextColor); copy.Location = new Point(240, 64); copy.Width = 110; copy.Click += (s, e) => { if (_address.Text != "—") { Clipboard.SetText(_address.Text); ShowNotice("IP сервера скопирован.", false); } }; panel.Controls.Add(copy);
             panel.Controls.Add(Label("Адрес читается из build-info.txt текущего релиза.", 0, 118, 9, Muted, false)); return panel;
         }
 
         private Control MakeBuildCard()
         {
-            var panel = CardPanel(); panel.Padding = new Padding(22); panel.Controls.Add(Label("⇩  ЗАПУСК ИГРЫ", 0, 0, 17, Text, true)); _profile = Label("—", 0, 45, 13, Text, true); _meta = Label("—", 0, 70, 9, Muted, false); panel.Controls.Add(_profile); panel.Controls.Add(_meta);
+            var panel = CardPanel(); panel.Padding = new Padding(22); panel.Controls.Add(Label("⇩  ЗАПУСК ИГРЫ", 0, 0, 17, TextColor, true)); _profile = Label("—", 0, 45, 13, TextColor, true); _meta = Label("—", 0, 70, 9, Muted, false); panel.Controls.Add(_profile); panel.Controls.Add(_meta);
             _update = Button("Установить / обновить сборку", Orange, Color.FromArgb(23, 13, 6)); _update.Location = new Point(22, 100); _update.Width = 300; _update.Click += async (s, e) => await InstallAsync(); panel.Controls.Add(_update);
-            _launch = Button("Запустить Minecraft", Color.FromArgb(43, 28, 20), Text); _launch.Location = new Point(22, 140); _launch.Width = 300; _launch.Enabled = false; _launch.Click += async (s, e) => await LaunchAsync(); panel.Controls.Add(_launch);
+            _launch = Button("Запустить Minecraft", Color.FromArgb(43, 28, 20), TextColor); _launch.Location = new Point(22, 140); _launch.Width = 300; _launch.Enabled = false; _launch.Click += async (s, e) => await LaunchAsync(); panel.Controls.Add(_launch);
             _progress = new ProgressBar { Location = new Point(22, 178), Width = 300, Height = 5, Style = ProgressBarStyle.Continuous, Maximum = 100, Visible = false }; panel.Controls.Add(_progress); return panel;
         }
 
-        private Label Detail(TableLayoutPanel panel, string caption, int column) { var label = new Label { Text = caption + "\n—", Dock = DockStyle.Fill, Padding = new Padding(5), ForeColor = Text, Font = new Font("Segoe UI", 10, FontStyle.Bold) }; panel.Controls.Add(label, column, 0); return label; }
+        private Label Detail(TableLayoutPanel panel, string caption, int column) { var label = new Label { Text = caption + "\n—", Dock = DockStyle.Fill, Padding = new Padding(5), ForeColor = TextColor, Font = new Font("Segoe UI", 10, FontStyle.Bold) }; panel.Controls.Add(label, column, 0); return label; }
         private Panel CardPanel() { return new Panel { Dock = DockStyle.Fill, BackColor = Card, Margin = new Padding(6), BorderStyle = BorderStyle.FixedSingle }; }
         private Label Label(string text, int x, int y, float size, Color color, bool bold) { return new Label { Text = text, AutoSize = true, Location = new Point(x, y), Font = new Font("Segoe UI", size, bold ? FontStyle.Bold : FontStyle.Regular), ForeColor = color }; }
         private Button Button(string text, Color back, Color fore) { return new Button { Text = text, AutoSize = true, Height = 32, FlatStyle = FlatStyle.Flat, BackColor = back, ForeColor = fore, FlatAppearance = { BorderColor = Color.FromArgb(90, 55, 34) }, Font = new Font("Segoe UI", 9, FontStyle.Bold) }; }
