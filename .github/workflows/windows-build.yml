@@ -45,7 +45,17 @@ jobs:
       - name: Build updater
         shell: powershell
         run: msbuild src-csharp\Veles.Updater\Veles.Updater.csproj /t:Build /p:BuildProjectReferences=false /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m
-      - name: Upload application binaries
+      - name: Install Inno Setup
+        shell: powershell
+        run: choco install innosetup --no-progress -y
+      - name: Build separate setup installers
+        shell: powershell
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc installer\VelesLauncher.iss
+          & $iscc installer\VelesBuildPublisher.iss
+          & $iscc installer\VelesLauncherUpdater.iss
+      - name: Upload application binaries and setup files
         uses: actions/upload-artifact@v4
         with:
           name: veles-csharp-release
@@ -53,3 +63,4 @@ jobs:
             src-csharp/Veles.Launcher/bin/Release/**
             src-csharp/Veles.BuildPublisher/bin/Release/**
             src-csharp/Veles.Updater/bin/Release/**
+            artifacts/setup/*.exe
