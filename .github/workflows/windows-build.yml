@@ -16,6 +16,11 @@ jobs:
       - name: Build core library
         shell: powershell
         run: msbuild src-csharp\Veles.Core\Veles.Core.csproj /t:Restore,Build /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m
+      - name: Stage core library for tests
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force src-csharp\Veles.Core.Tests\bin\Release | Out-Null
+          Copy-Item src-csharp\Veles.Core\bin\Release\Veles.Core.dll src-csharp\Veles.Core.Tests\bin\Release\Veles.Core.dll -Force
       - name: Build core tests
         shell: powershell
         run: msbuild src-csharp\Veles.Core.Tests\Veles.Core.Tests.csproj /t:Build /p:BuildProjectReferences=false /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m
