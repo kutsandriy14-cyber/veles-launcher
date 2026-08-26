@@ -1,7 +1,7 @@
 [Setup]
 AppId={{B3A8B12D-4D4A-43E8-9D75-000000000001}}
 AppName=Veles Launcher
-AppVersion=0.1.1
+AppVersion=0.1.2
 AppPublisher=Veles PlayGame
 DefaultDirName={localappdata}\Programs\Veles Launcher
 DefaultGroupName=Veles Launcher
