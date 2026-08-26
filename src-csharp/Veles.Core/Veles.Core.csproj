@@ -11,6 +11,8 @@
     <LangVersion>7.3</LangVersion>
     <OutputPath Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">bin\Debug\</OutputPath>
     <OutputPath Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">bin\Release\</OutputPath>
+    <BaseOutputPath>bin\</BaseOutputPath>
+    <OutputPath Condition="'$(OutputPath)' == ''">bin\$(Configuration)\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
