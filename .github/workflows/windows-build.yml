@@ -15,16 +15,16 @@ jobs:
         uses: microsoft/setup-msbuild@v2
       - name: Build core library
         shell: powershell
-        run: msbuild src-csharp\Veles.Core\Veles.Core.csproj /t:Restore,Build /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /m
+        run: msbuild src-csharp\Veles.Core\Veles.Core.csproj /t:Restore,Build /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m
       - name: Build launcher
         shell: powershell
-        run: msbuild src-csharp\Veles.Launcher\Veles.Launcher.csproj /t:Build /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /m
+        run: msbuild src-csharp\Veles.Launcher\Veles.Launcher.csproj /t:Build /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m
       - name: Build admin publisher
         shell: powershell
-        run: msbuild src-csharp\Veles.BuildPublisher\Veles.BuildPublisher.csproj /t:Build /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /m
+        run: msbuild src-csharp\Veles.BuildPublisher\Veles.BuildPublisher.csproj /t:Build /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m
       - name: Build updater
         shell: powershell
-        run: msbuild src-csharp\Veles.Updater\Veles.Updater.csproj /t:Build /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /m
+        run: msbuild src-csharp\Veles.Updater\Veles.Updater.csproj /t:Build /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m
       - name: Upload application binaries
         uses: actions/upload-artifact@v4
         with:
