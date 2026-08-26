@@ -7,6 +7,7 @@
     <Prefer32Bit>false</Prefer32Bit>
     <RootNamespace>Veles.Core</RootNamespace>
     <AssemblyName>Veles.Core</AssemblyName>
+    <TargetExt>.dll</TargetExt>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
