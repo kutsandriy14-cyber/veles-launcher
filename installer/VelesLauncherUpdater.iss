@@ -13,6 +13,16 @@ SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayIcon={app}\Veles.Updater.exe
 
+[Code]
+function InitializeSetup(): Boolean;
+var
+  Release: Cardinal;
+begin
+  Result := RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full', 'Release', Release) and (Release >= 528040);
+  if not Result then
+    MsgBox('.NET Framework 4.8 обязателен. Установите его с https://dotnet.microsoft.com/download/dotnet-framework/net48 и повторите запуск.', mbError, MB_OK);
+end;
+
 [Files]
 Source: "..\src-csharp\Veles.Updater\bin\Release\Veles.Updater.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\src-csharp\Veles.Updater\bin\Release\Veles.Core.dll"; DestDir: "{app}"; Flags: ignoreversion
