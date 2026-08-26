@@ -46,6 +46,9 @@ namespace Veles.BuildPublisher
         {
             if (string.IsNullOrWhiteSpace(_selectedZip)) { MessageBox.Show(this, "Выберите ZIP-архив сборки.", "Не выбран файл", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
             if (string.IsNullOrWhiteSpace(_token.Text)) { MessageBox.Show(this, "Введите GitHub Personal Access Token.", "Нет токена", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (string.IsNullOrWhiteSpace(_name.Text) || string.IsNullOrWhiteSpace(_version.Text) || string.IsNullOrWhiteSpace(_minecraft.Text) || string.IsNullOrWhiteSpace(_loader.Text) || string.IsNullOrWhiteSpace(_loaderVersion.Text) || string.IsNullOrWhiteSpace(_ip.Text) || string.IsNullOrWhiteSpace(_port.Text)) { MessageBox.Show(this, "Заполните все обязательные поля сборки.", "Не все поля заполнены", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            int port; if (!int.TryParse(_port.Text, out port) || port < 1 || port > 65535) { MessageBox.Show(this, "Порт должен быть числом от 1 до 65535.", "Неверный порт", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            Version parsedVersion; if (!Version.TryParse(_version.Text.Trim().TrimStart('v', 'V'), out parsedVersion)) { MessageBox.Show(this, "Версия сборки должна иметь вид 0.12.7.", "Неверная версия", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
             try
             {
                 _publish.Enabled = false; _status.Text = "Создание GitHub Release…";
