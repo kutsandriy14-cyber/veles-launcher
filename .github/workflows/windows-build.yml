@@ -1,0 +1,26 @@
+name: Build C# applications
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+      - name: Restore and build solution
+        shell: powershell
+        run: msbuild VelesLauncher.sln /t:Restore,Build /p:Configuration=Release /p:Platform="Any CPU" /m
+      - name: Upload application binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: veles-csharp-release
+          path: |
+            src-csharp/Veles.Launcher/bin/Release/**
+            src-csharp/Veles.BuildPublisher/bin/Release/**
+            src-csharp/Veles.Updater/bin/Release/**

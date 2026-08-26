@@ -1,0 +1,21 @@
+# Visual Studio / MSBuild
+.vs/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userosscache
+*.pdb
+
+# Local output
+artifacts/
+dist/
+
+# Secrets and local files
+*.token
+*.secret
+.env
+
+# OS
+.DS_Store
+Thumbs.db
