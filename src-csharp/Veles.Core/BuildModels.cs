@@ -20,6 +20,7 @@ namespace Veles.Core
         public string ForgeJar { get; set; }
         public string MemoryMin { get; set; }
         public string MemoryMax { get; set; }
+        public string BuildSha256 { get; set; }
 
         public string ServerAddress
         {
@@ -34,7 +35,7 @@ namespace Veles.Core
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    line = line.Trim();
+                    line = line.Trim().TrimStart('\uFEFF');
                     if (line.Length == 0 || line.StartsWith("#")) continue;
                     var separator = line.IndexOf('=');
                     if (separator <= 0) continue;
@@ -48,7 +49,7 @@ namespace Veles.Core
                 ModLoaderVersion = Get(values, "MOD_LOADER_VERSION"), ServerIp = Get(values, "SERVER_IP"),
                 ServerPort = Get(values, "SERVER_PORT"), ServerName = Get(values, "SERVER_NAME"),
                 SiteUrl = Get(values, "SITE_URL"), LaunchCommand = Get(values, "LAUNCH_COMMAND"),
-                ForgeJar = Get(values, "FORGE_JAR"), MemoryMin = Get(values, "MEMORY_MIN"), MemoryMax = Get(values, "MEMORY_MAX")
+                ForgeJar = Get(values, "FORGE_JAR"), MemoryMin = Get(values, "MEMORY_MIN"), MemoryMax = Get(values, "MEMORY_MAX"), BuildSha256 = Get(values, "BUILD_SHA256")
             };
         }
 
@@ -63,6 +64,9 @@ namespace Veles.Core
             if (string.IsNullOrWhiteSpace(ServerIp)) missing.Add("SERVER_IP");
             if (string.IsNullOrWhiteSpace(ServerPort)) missing.Add("SERVER_PORT");
             if (missing.Count > 0) throw new InvalidDataException("В build-info.txt отсутствуют поля: " + string.Join(", ", missing));
+            int port;
+            if (!int.TryParse(ServerPort, out port) || port < 1 || port > 65535) throw new InvalidDataException("SERVER_PORT должен быть числом от 1 до 65535.");
+            if (ServerIp.IndexOf(':') < 0 && ServerIp.IndexOf('.') < 0) throw new InvalidDataException("SERVER_IP выглядит некорректно.");
         }
 
         private static string Get(Dictionary<string, string> values, string key)

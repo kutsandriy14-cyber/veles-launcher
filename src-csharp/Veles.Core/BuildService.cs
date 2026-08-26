@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
@@ -64,10 +65,31 @@ namespace Veles.Core
             {
                 var zipPath = Path.Combine(temp, "build.zip");
                 await DownloadFileAsync(latest.Archive.BrowserDownloadUrl, zipPath, progress, cancellationToken).ConfigureAwait(false);
-                if (Directory.Exists(InstanceDirectory)) Directory.Delete(InstanceDirectory, true);
-                Directory.CreateDirectory(InstanceDirectory);
-                ZipFile.ExtractToDirectory(zipPath, InstanceDirectory);
-                MinecraftServerFile.Write(Path.Combine(InstanceDirectory, "servers.dat"), latest.Info.ServerName ?? "Veles PlayGame", latest.Info.ServerAddress);
+                if (!string.IsNullOrWhiteSpace(latest.Info.BuildSha256))
+                {
+                    using (var sha = SHA256.Create()) using (var file = File.OpenRead(zipPath))
+                    {
+                        var actual = BitConverter.ToString(sha.ComputeHash(file)).Replace("-", string.Empty).ToLowerInvariant();
+                        if (!string.Equals(actual, latest.Info.BuildSha256.Trim().ToLowerInvariant(), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("SHA-256 build.zip не совпадает с build-info.txt.");
+                    }
+                }
+                var staging = Path.Combine(temp, "instance");
+                Directory.CreateDirectory(staging);
+                ZipFile.ExtractToDirectory(zipPath, staging);
+                var backup = InstanceDirectory + ".backup-" + Guid.NewGuid().ToString("N");
+                if (Directory.Exists(InstanceDirectory)) Directory.Move(InstanceDirectory, backup);
+                try
+                {
+                    Directory.Move(staging, InstanceDirectory);
+                    MinecraftServerFile.Write(Path.Combine(InstanceDirectory, "servers.dat"), latest.Info.ServerName ?? "Veles PlayGame", latest.Info.ServerAddress);
+                    if (Directory.Exists(backup)) Directory.Delete(backup, true);
+                }
+                catch
+                {
+                    if (Directory.Exists(InstanceDirectory)) Directory.Delete(InstanceDirectory, true);
+                    if (Directory.Exists(backup)) Directory.Move(backup, InstanceDirectory);
+                    throw;
+                }
                 var installed = new InstalledBuild { Version = latest.Info.BuildVersion, Name = latest.Info.BuildName, Minecraft = latest.Info.MinecraftVersion, ModLoader = latest.Info.ModLoader, ModLoaderVersion = latest.Info.ModLoaderVersion, Server = latest.Info.ServerAddress, InstalledAtUtc = DateTime.UtcNow };
                 File.WriteAllText(MetadataPath, _json.Serialize(installed));
             }

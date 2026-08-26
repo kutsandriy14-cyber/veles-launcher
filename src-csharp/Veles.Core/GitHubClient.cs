@@ -44,23 +44,23 @@ namespace Veles.Core
             var cleanUrl = uploadUrl.Replace("{?name,label}", string.Empty);
             var separator = cleanUrl.Contains("?") ? "&" : "?";
             var url = cleanUrl + separator + "name=" + Uri.EscapeDataString(assetName);
-            var bytes = File.ReadAllBytes(filePath);
+            var fileInfo = new FileInfo(filePath);
             var request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "POST";
             request.UserAgent = "Veles-Build-Publisher/1.0";
             request.Accept = "application/vnd.github+json";
             request.ContentType = "application/octet-stream";
             request.Headers[HttpRequestHeader.Authorization] = "Bearer " + _token;
-            request.ContentLength = bytes.Length;
+            request.ContentLength = fileInfo.Length;
+            using (var input = fileInfo.OpenRead())
             using (var stream = await request.GetRequestStreamAsync().ConfigureAwait(false))
             {
-                const int chunkSize = 1024 * 1024;
-                for (var offset = 0; offset < bytes.Length; offset += chunkSize)
+                var buffer = new byte[1024 * 1024]; long uploaded = 0; int count;
+                while ((count = await input.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false)) > 0)
                 {
-                    var count = Math.Min(chunkSize, bytes.Length - offset);
-                    await stream.WriteAsync(bytes, offset, count).ConfigureAwait(false);
-                    if (progress != null) progress.Report((int)((offset + count) * 100L / Math.Max(1, bytes.Length)));
-                    cancellationToken.ThrowIfCancellationRequested();
+                    await stream.WriteAsync(buffer, 0, count, cancellationToken).ConfigureAwait(false);
+                    uploaded += count;
+                    if (progress != null) progress.Report((int)(uploaded * 100L / Math.Max(1L, fileInfo.Length)));
                 }
             }
             using (var response = (HttpWebResponse)await request.GetResponseAsync().ConfigureAwait(false))
