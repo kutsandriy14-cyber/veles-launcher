@@ -66,14 +66,3 @@ jobs:
             src-csharp/Veles.BuildPublisher/bin/Release/**
             src-csharp/Veles.Updater/bin/Release/**
             artifacts/setup/*.exe
-      - name: Publish tagged launcher release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Veles Launcher ${{ github.ref_name }}
-          body: "Проверенный релиз нативной C# версии Veles Launcher. Включает отдельные установщики Launcher, Build Publisher и Updater."
-          files: |
-            artifacts/setup/VelesLauncherSetup.exe
-            artifacts/setup/VelesBuildPublisherSetup.exe
-            artifacts/setup/VelesLauncherUpdaterSetup.exe
