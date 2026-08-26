@@ -21,7 +21,7 @@ namespace Veles.Updater
     {
         private readonly GitHubClient _github = new GitHubClient("kutsandriy14-cyber", "veles-launcher");
         private readonly HttpClient _http = new HttpClient();
-        private readonly Version _current = new Version(0, 1, 0);
+        private readonly Version _current = ProductInfo.Version;
         private Label _status, _versions; private Button _install; private ReleaseInfo _release;
         public UpdaterForm()
         {
