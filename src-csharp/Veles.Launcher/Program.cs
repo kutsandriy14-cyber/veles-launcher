@@ -58,9 +58,12 @@ namespace Veles.Launcher
             var html = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WebUi", "index.html");
             if (File.Exists(html))
             {
-                var baseHref = new Uri(Path.GetDirectoryName(html) + Path.DirectorySeparatorChar).AbsoluteUri;
+                var directory = Path.GetDirectoryName(html);
                 var source = File.ReadAllText(html);
-                source = source.Replace("<head>", "<head><base href='" + baseHref + "'>");
+                var css = File.Exists(Path.Combine(directory, "styles.css")) ? File.ReadAllText(Path.Combine(directory, "styles.css")) : string.Empty;
+                var js = File.Exists(Path.Combine(directory, "main.js")) ? File.ReadAllText(Path.Combine(directory, "main.js")) : string.Empty;
+                source = source.Replace("<link rel=\"stylesheet\" href=\"styles.css\">", "<style>" + css + "</style>");
+                source = source.Replace("<script src=\"main.js\"></script>", "<script>" + js + "</script>");
                 _browser.DocumentText = source;
             }
             else _browser.DocumentText = "<html><body style='background:#100e0d;color:white;font-family:Segoe UI;padding:30px'>Web UI не найден. Переустановите Launcher.</body></html>";
