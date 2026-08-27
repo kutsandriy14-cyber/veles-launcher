@@ -7,6 +7,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -82,3 +85,11 @@ jobs:
             src-csharp/Veles.Launcher/bin/Release/**
             src-csharp/Veles.BuildPublisher/bin/Release/**
             artifacts/setup/*.exe
+      - name: Publish tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          gh release create $tag artifacts/setup/VelesLauncherSetup.exe artifacts/setup/VelesBuildPublisherSetup.exe --title "Veles Launcher $tag — CEF Web UI" --notes "TypeScript Web UI внутри нативного Launcher. Совместимость с Windows 7–11 через CEF 109. Сборка обязательна перед запуском Minecraft."
