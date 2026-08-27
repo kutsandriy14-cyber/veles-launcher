@@ -121,7 +121,7 @@ namespace Veles.Setup
         private InstalledRecord ReadRecord()
         {
             try { if (File.Exists(_recordPath)) return new JavaScriptSerializer().Deserialize<InstalledRecord>(File.ReadAllText(_recordPath, Encoding.UTF8)); } catch { }
-            var legacyDirectory = BaseDirectory(); if (File.Exists(Path.Combine(legacyDirectory, _payload.TargetExecutable))) return new InstalledRecord { ProductId = _payload.ProductId, Version = "unknown", InstallDirectory = legacyDirectory };
+            var legacyDirectory = BaseDirectory(); var legacyNames = string.Equals(_payload.ProductId, "publisher", StringComparison.OrdinalIgnoreCase) ? new[] { _payload.TargetExecutable, "Veles.BuildPublisher.exe" } : new[] { _payload.TargetExecutable, "Veles.Launcher.exe" }; foreach (var name in legacyNames) if (File.Exists(Path.Combine(legacyDirectory, name))) return new InstalledRecord { ProductId = _payload.ProductId, Version = "unknown", InstallDirectory = legacyDirectory };
             return null;
         }
         private void SaveRecord(InstalledRecord record) { Directory.CreateDirectory(Path.GetDirectoryName(_recordPath)); File.WriteAllText(_recordPath, new JavaScriptSerializer().Serialize(record), Encoding.UTF8); }
