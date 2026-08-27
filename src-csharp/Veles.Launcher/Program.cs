@@ -22,7 +22,7 @@ namespace Veles.Launcher
             Application.SetCompatibleTextRenderingDefault(false);
             Cef.EnableHighDPISupport();
             var cefSettings = new CefSettings { CachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Veles", "cef-cache") };
-            if (!Cef.Initialize(cefSettings, true, null)) return;
+            if (!Cef.Initialize(cefSettings, true, (IBrowserProcessHandler)null)) return;
             Application.Run(new LauncherForm());
             Cef.Shutdown();
         }
@@ -168,18 +168,18 @@ namespace Veles.Launcher
         private void ApplyState(string stateJson)
         {
             if (_browser == null || !_browser.IsBrowserInitialized) return;
-            try { _browser.GetMainFrame().ExecuteJavaScript("window.velesSetState(" + stateJson + ");", "veles://state", 0); } catch { }
+            try { _browser.GetMainFrame().ExecuteJavaScriptAsync("window.velesSetState(" + stateJson + ");", "veles://state", 0); } catch { }
         }
         private void ApplyUiText(string id, string value)
         {
             if (_browser == null || !_browser.IsBrowserInitialized) return;
-            try { _browser.GetMainFrame().ExecuteJavaScript("(function(){var e=document.getElementById(" + Json(id) + ");if(e)e.textContent=" + Json(value) + ";})();", "veles://text", 0); } catch { }
+            try { _browser.GetMainFrame().ExecuteJavaScriptAsync("(function(){var e=document.getElementById(" + Json(id) + ");if(e)e.textContent=" + Json(value) + ";})();", "veles://text", 0); } catch { }
         }
         private void ApplyNotice(string text, bool success)
         {
             _lastNotice = text;
             if (_browser == null || !_browser.IsBrowserInitialized) return;
-            try { _browser.GetMainFrame().ExecuteJavaScript("(function(){var e=document.getElementById('notice');if(e){e.textContent=" + Json(text) + ";e.style.color=" + Json(success ? "#9fe3ad" : "#e3a982") + ";}})();", "veles://notice", 0); } catch { }
+            try { _browser.GetMainFrame().ExecuteJavaScriptAsync("(function(){var e=document.getElementById('notice');if(e){e.textContent=" + Json(text) + ";e.style.color=" + Json(success ? "#9fe3ad" : "#e3a982") + ";}})();", "veles://notice", 0); } catch { }
         }
         private string ReplaceTokens(string value) { return (value ?? string.Empty).Replace("${INSTANCE}", _builds.InstanceDirectory).Replace("/", "\\"); }
         private string SafeInstancePath(string relative) { var root = Path.GetFullPath(_builds.InstanceDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar; var full = Path.GetFullPath(Path.Combine(_builds.InstanceDirectory, relative)); if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Профиль запуска выходит за пределы сборки."); return full; }
