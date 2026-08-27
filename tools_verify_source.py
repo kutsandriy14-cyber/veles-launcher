@@ -5,6 +5,7 @@ ROOT = pathlib.Path(__file__).resolve().parent
 launcher = ROOT / "src-csharp"
 required = [
     launcher / "Veles.Core" / "BuildModels.cs",
+    launcher / "Veles.Core" / "BuildArchiveReader.cs",
     launcher / "Veles.Core" / "BuildService.cs",
     launcher / "Veles.Core" / "JavaRuntimeService.cs",
     launcher / "Veles.Core" / "LauncherSettings.cs",
@@ -20,7 +21,7 @@ for path in required:
     assert path.is_file(), f"missing {path}"
 
 text = "\n".join(path.read_text(encoding="utf-8") for path in required)
-for value in ["veles-modpack-releases", "build-info.txt", "build.zip", "BUILD_VERSION", "MINECRAFT_VERSION", "MOD_LOADER_VERSION", "SERVER_ADDRESS", "launch.json", "JAVA_RUNTIME_PATH", "VelesLauncherSetup.exe", "SHA256", "servers.dat", "Проверить и обновить сборку", "Настройки", "CheckLauncherUpdateAsync", "--auto", "--wait-pid", "Veles.Setup"]:
+for value in ["veles-modpack-releases", "BuildArchiveMetadata.Read", "FillMetadata", "SetMetadataFieldsReadOnly", "build-info.txt", "build.zip", "BUILD_VERSION", "MINECRAFT_VERSION", "MOD_LOADER_VERSION", "SERVER_ADDRESS", "launch.json", "JAVA_RUNTIME_PATH", "VelesLauncherSetup.exe", "SHA256", "servers.dat", "Проверить и обновить сборку", "Настройки", "CheckLauncherUpdateAsync", "--auto", "--wait-pid", "Veles.Setup"]:
     assert value in text, f"missing contract value: {value}"
 
 for forbidden in ["LaunchCommand", "LAUNCH_COMMAND=", "SERVER_IP=", "SERVER_PORT=", "innosetup", "ISCC.exe"]:
@@ -34,6 +35,11 @@ assert not (ROOT / "installer" / "VelesBuildPublisher.iss").exists(), "legacy In
 assert not (ROOT / "installer" / "VelesLauncherUpdater.iss").exists(), "separate updater setup must not exist"
 assert (ROOT / "src-csharp" / "Veles.Setup" / "Veles.Setup.csproj").is_file(), "custom setup project missing"
 assert "tools_pack_setup.py" in (ROOT / ".github" / "workflows" / "windows-build.yml").read_text(encoding="utf-8"), "CI must package custom setup"
+webui = ROOT / "src-web-ui"
+for path in [webui / "index.html", webui / "styles.css", webui / "src" / "main.ts"]:
+    assert path.is_file(), f"missing Web UI source: {path}"
+assert "details-strip" in (webui / "index.html").read_text(encoding="utf-8"), "Web UI parameter strip missing"
+assert "CefSharp" in (launcher / "Veles.Launcher" / "Program.cs").read_text(encoding="utf-8"), "CEF shell missing"
 assert "ApplicationIcon" in (ROOT / "src-csharp" / "Veles.Setup" / "Veles.Setup.csproj").read_text(encoding="utf-8"), "custom setup icon missing"
 for icon in ["veles-launcher-icon.ico", "veles-publisher-icon.ico", "veles-setup-icon.ico"]:
     assert (ROOT / "assets" / "icons" / icon).is_file(), f"missing icon {icon}"
