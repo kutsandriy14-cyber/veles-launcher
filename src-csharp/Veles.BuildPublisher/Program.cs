@@ -25,7 +25,7 @@ namespace Veles.BuildPublisher
         private string _tokenValue;
         private Button _publish;
         private string _selectedZip;
-        private BuildInfo _archiveInfo;
+        private BuildArchiveMetadata _archiveInfo;
         private readonly Color Orange = Color.FromArgb(249, 115, 22);
         private readonly Color Background = Color.FromArgb(12, 10, 9);
         private readonly Color Card = Color.FromArgb(28, 25, 23);
