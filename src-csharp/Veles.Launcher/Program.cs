@@ -23,7 +23,7 @@ namespace Veles.Launcher
         }
     }
 
-    internal sealed class LauncherForm : Form
+    public sealed class LauncherForm : Form
     {
         private readonly BuildService _builds = new BuildService();
         private readonly WebBrowser _browser = new WebBrowser();
