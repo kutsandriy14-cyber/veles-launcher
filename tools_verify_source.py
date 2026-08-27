@@ -32,7 +32,7 @@ assert "Veles.Launcher.exe" in setup and "Veles.Updater.exe" in setup and "Veles
 assert not (ROOT / "installer" / "VelesLauncherUpdater.iss").exists(), "separate updater setup must not exist"
 assert not re.search(r"github_pat_[A-Za-z0-9_]+", text), "possible GitHub token in source"
 config = (ROOT.parent / "veles-modpack-releases" / "CONFIG.example.txt").read_text(encoding="utf-8")
-for key in ["BUILD_NAME", "BUILD_VERSION", "MINECRAFT_VERSION", "MOD_LOADER", "MOD_LOADER_VERSION", "SERVER_ADDRESS", "MOD_LOADER_PROFILE", "JAVA_VERSION", "JAVA_RUNTIME_PATH", "MEMORY_MIN", "MEMORY_MAX", "BUILD_SHA256"]:
+for key in ["BUILD_NAME", "BUILD_VERSION", "MINECRAFT_VERSION", "MOD_LOADER", "MOD_LOADER_VERSION", "SERVER_ADDRESS", "MOD_LOADER_PROFILE", "JAVA_VERSION", "JAVA_VENDOR", "JAVA_RUNTIME_PATH", "MEMORY_MIN", "MEMORY_MAX", "BUILD_SHA256"]:
     assert f"{key}=" in config, f"missing config key {key}"
 for key in ["SERVER_IP", "SERVER_PORT", "LAUNCH_COMMAND"]:
     assert f"{key}=" not in config, f"legacy config key remains: {key}"

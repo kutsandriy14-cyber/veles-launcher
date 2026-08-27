@@ -18,6 +18,7 @@ namespace Veles.Core
         public string SiteUrl { get; set; }
         public string ModLoaderProfile { get; set; }
         public string JavaVersion { get; set; }
+        public string JavaVendor { get; set; }
         public string JavaRuntimePath { get; set; }
         public string JavaRuntimeSha256 { get; set; }
         public string MemoryMin { get; set; }
@@ -50,7 +51,7 @@ namespace Veles.Core
                 MinecraftVersion = Get(values, "MINECRAFT_VERSION"), ModLoader = Get(values, "MOD_LOADER"),
                 ModLoaderVersion = Get(values, "MOD_LOADER_VERSION"), ServerAddressValue = Get(values, "SERVER_ADDRESS"), ServerName = Get(values, "SERVER_NAME"),
                 SiteUrl = Get(values, "SITE_URL"), ModLoaderProfile = Get(values, "MOD_LOADER_PROFILE"),
-                JavaVersion = Get(values, "JAVA_VERSION"), JavaRuntimePath = Get(values, "JAVA_RUNTIME_PATH"), JavaRuntimeSha256 = Get(values, "JAVA_RUNTIME_SHA256"),
+                JavaVersion = Get(values, "JAVA_VERSION"), JavaVendor = Get(values, "JAVA_VENDOR"), JavaRuntimePath = Get(values, "JAVA_RUNTIME_PATH"), JavaRuntimeSha256 = Get(values, "JAVA_RUNTIME_SHA256"),
                 MemoryMin = Get(values, "MEMORY_MIN"), MemoryMax = Get(values, "MEMORY_MAX"), BuildSha256 = Get(values, "BUILD_SHA256")
             };
         }
@@ -65,7 +66,10 @@ namespace Veles.Core
             if (string.IsNullOrWhiteSpace(ModLoaderVersion)) missing.Add("MOD_LOADER_VERSION");
             if (string.IsNullOrWhiteSpace(ServerAddressValue)) missing.Add("SERVER_ADDRESS");
             if (string.IsNullOrWhiteSpace(JavaVersion)) missing.Add("JAVA_VERSION");
+            if (string.IsNullOrWhiteSpace(JavaVendor)) missing.Add("JAVA_VENDOR");
             if (string.IsNullOrWhiteSpace(JavaRuntimePath)) missing.Add("JAVA_RUNTIME_PATH");
+            if (!string.IsNullOrWhiteSpace(JavaVendor) && !string.Equals(JavaVendor, "BellSoft Liberica", StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("JAVA_VENDOR должен быть BellSoft Liberica.");
+            if (!string.Equals(JavaVersion, "17", StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Для этой серверной сборки требуется Java 17.");
             if (missing.Count > 0) throw new InvalidDataException("В build-info.txt отсутствуют поля: " + string.Join(", ", missing));
             string parsedIp; int parsedPort;
             if (!ServerAddressParser.TryParse(ServerAddressValue, out parsedIp, out parsedPort)) throw new InvalidDataException("SERVER_ADDRESS должен иметь вид IP:PORT, например 213.152.43.53:25589.");
