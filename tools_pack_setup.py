@@ -18,7 +18,7 @@ def locate(*relative_candidates):
 
 
 def package(product_id, display_name, version, target_executable, shortcut_name, files, output_name):
-    base = ROOT / "src-csharp" / "Veles.Setup" / "bin" / "Release" / "VelesSetup.exe"
+    base = ROOT / "src-csharp" / "Veles.Setup" / "bin" / "Release" / "Veles.Setup.exe"
     output = ROOT / "artifacts" / "setup" / output_name
     output.parent.mkdir(parents=True, exist_ok=True)
     temp = ROOT / (".payload-" + product_id + ".zip")
