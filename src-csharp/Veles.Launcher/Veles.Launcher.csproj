@@ -11,6 +11,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <LangVersion>7.3</LangVersion>
     <ApplicationIcon>..\..\assets\icons\veles-launcher-icon.ico</ApplicationIcon>
+    <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == ''">$(UserProfile)\.nuget\packages\</NuGetPackageRoot>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" /><Reference Include="System.Core" /><Reference Include="System.Drawing" /><Reference Include="System.Windows.Forms" />
@@ -36,6 +37,7 @@
       <CefRuntimeFiles Include="$(NuGetPackageRoot)cef.redist.x86\109.1.11\CEF\**\*.*" />
       <CefSharpRuntimeFiles Include="$(NuGetPackageRoot)cefsharp.common\109.1.110\CefSharp\x86\*.*" />
     </ItemGroup>
+    <Message Importance="high" Text="Veles: copying Cef runtime from $(NuGetPackageRoot)cef.redist.x86\109.1.11\CEF" />
     <Copy SourceFiles="@(CefRuntimeFiles)" DestinationFiles="@(CefRuntimeFiles-&gt;'$(TargetDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     <Copy SourceFiles="@(CefSharpRuntimeFiles)" DestinationFiles="@(CefSharpRuntimeFiles-&gt;'$(TargetDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
