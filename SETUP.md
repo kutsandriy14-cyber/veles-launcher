@@ -18,4 +18,4 @@
 
 Запустите Veles Launcher Updater. Он сравнит встроенную версию с последним релизом `kutsandriy14-cyber/veles-launcher` и ищет asset с точным именем `VelesLauncherSetup.exe`. При наличии более новой версии он скачает установщик, запустит его и завершит работу старого обновлятора.
 
-Актуальный проверенный релиз: [Veles Launcher v0.1.3](https://github.com/kutsandriy14-cyber/veles-launcher/releases/tag/v0.1.3).
+Актуальный проверенный релиз: [Veles Launcher v0.1.4](https://github.com/kutsandriy14-cyber/veles-launcher/releases/tag/v0.1.4).

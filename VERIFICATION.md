@@ -18,7 +18,7 @@
 
 ## Артефакты
 
-`VelesLauncherSetup.exe`, `VelesBuildPublisherSetup.exe` и `VelesLauncherUpdaterSetup.exe` опубликованы в [релизе v0.1.3](https://github.com/kutsandriy14-cyber/veles-launcher/releases/tag/v0.1.3). В основном `VelesLauncherSetup.exe` Updater устанавливается рядом с `Veles.Launcher.exe`.
+`VelesLauncherSetup.exe`, `VelesBuildPublisherSetup.exe` и `VelesLauncherUpdaterSetup.exe` опубликованы в [релизе v0.1.4](https://github.com/kutsandriy14-cyber/veles-launcher/releases/tag/v0.1.4). В основном `VelesLauncherSetup.exe` Updater устанавливается рядом с `Veles.Launcher.exe`.
 
 ## Ручная проверка, которая понадобится после получения настоящей сборки
 

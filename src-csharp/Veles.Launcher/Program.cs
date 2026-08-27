@@ -28,15 +28,15 @@ namespace Veles.Launcher
         private Label _version, _address, _profile, _meta, _loader, _minecraft, _status, _notice;
         private Button _update, _launch;
         private ProgressBar _progress;
-        private readonly Color Background = Color.FromArgb(16, 11, 8);
-        private readonly Color Card = Color.FromArgb(27, 21, 18);
-        private readonly Color Orange = Color.FromArgb(255, 122, 25);
-        private readonly Color TextColor = Color.FromArgb(245, 238, 232);
-        private readonly Color Muted = Color.FromArgb(163, 149, 141);
+        private readonly Color Background = Color.FromArgb(12, 10, 9);
+        private readonly Color Card = Color.FromArgb(28, 25, 23);
+        private readonly Color Orange = Color.FromArgb(249, 115, 22);
+        private readonly Color TextColor = Color.FromArgb(250, 250, 249);
+        private readonly Color Muted = Color.FromArgb(168, 162, 158);
 
         public LauncherForm()
         {
-            Text = "Veles Launcher"; Width = 1040; Height = 680; MinimumSize = new Size(900, 600); BackColor = Background; ForeColor = TextColor; StartPosition = FormStartPosition.CenterScreen;
+            Text = "Veles Launcher · TerraFirmaGreg: Modern"; Width = 1040; Height = 680; MinimumSize = new Size(900, 600); BackColor = Background; ForeColor = TextColor; StartPosition = FormStartPosition.CenterScreen;
             BuildUi(); Shown += async (s, e) => await RefreshAsync();
         }
 
@@ -45,30 +45,30 @@ namespace Veles.Launcher
             var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(30, 24, 30, 20), RowCount = 5, ColumnCount = 2, BackColor = Background };
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 155)); root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 76)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50)); root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50)); Controls.Add(root);
-            var brand = new Label { Text = "V  VELES LAUNCHER\n     TerraFirmaGreg: Modern", AutoSize = true, Font = new Font("Segoe UI", 12, FontStyle.Bold), ForeColor = TextColor, Dock = DockStyle.Fill };
+            var brand = new Label { Text = "V  VELES PLAYGAME\n     TERRA FIRMA GREG: MODERN", AutoSize = true, Font = new Font("Segoe UI", 12, FontStyle.Bold), ForeColor = TextColor, Dock = DockStyle.Fill };
             var site = Button("Сайт сервера", Color.FromArgb(33, 25, 19), TextColor); site.Anchor = AnchorStyles.Top | AnchorStyles.Right; site.Click += (s, e) => OpenUrl("https://veles-saite.vercel.app/");
             root.Controls.Add(brand, 0, 0); root.Controls.Add(site, 1, 0);
             var hero = new Panel { Dock = DockStyle.Fill }; root.Controls.Add(hero, 0, 1); root.SetColumnSpan(hero, 2);
             var title = new Label { Text = "TerraFirmaGreg: Modern", AutoSize = true, Location = new Point(0, 20), Font = new Font("Segoe UI", 28, FontStyle.Bold), ForeColor = Orange };
-            var subtitle = new Label { Text = "Одна сборка · один сервер · все параметры из GitHub Release", AutoSize = true, Location = new Point(3, 70), Font = new Font("Segoe UI", 10), ForeColor = Muted }; _version = new Label { Text = "v—", AutoSize = true, Location = new Point(720, 38), Font = new Font("Segoe UI", 20, FontStyle.Bold), ForeColor = Orange };
+            var subtitle = new Label { Text = "НЕОФИЦИАЛЬНЫЙ СЕРВЕР  •  ОНЛАЙН   ·   ВЫЖИВАНИЕ / КВЕСТЫ", AutoSize = true, Location = new Point(3, 70), Font = new Font("Segoe UI", 10), ForeColor = Muted }; _version = new Label { Text = "v—", AutoSize = true, Location = new Point(720, 38), Font = new Font("Segoe UI", 20, FontStyle.Bold), ForeColor = Orange };
             hero.Controls.Add(title); hero.Controls.Add(subtitle); hero.Controls.Add(_version);
             root.Controls.Add(MakeServerCard(), 0, 2); root.Controls.Add(MakeBuildCard(), 1, 2);
             var details = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Padding = new Padding(12), BackColor = Card }; details.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33)); details.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33)); details.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
             _loader = Detail(details, "МОДЛОАДЕР", 0); _minecraft = Detail(details, "ВЕРСИЯ MINECRAFT", 1); _status = Detail(details, "СТАТУС", 2); root.Controls.Add(details, 0, 3); root.SetColumnSpan(details, 2);
-            var footer = new Label { Text = "Veles PlayGame · Публичные релизы сборок GitHub", TextAlign = ContentAlignment.MiddleCenter, Dock = DockStyle.Fill, ForeColor = Muted, Font = new Font("Segoe UI", 8) }; root.Controls.Add(footer, 0, 4); root.SetColumnSpan(footer, 2);
+            var footer = new Label { Text = "Veles PlayGame  ·  TerraFirmaGreg: Modern  ·  GitHub Releases", TextAlign = ContentAlignment.MiddleCenter, Dock = DockStyle.Fill, ForeColor = Muted, Font = new Font("Segoe UI", 8) }; root.Controls.Add(footer, 0, 4); root.SetColumnSpan(footer, 2);
         }
 
         private Control MakeServerCard()
         {
-            var panel = CardPanel(); panel.Padding = new Padding(22); panel.Controls.Add(Label("◈  ПОДКЛЮЧЕНИЕ", 0, 0, 17, TextColor, true)); panel.Controls.Add(Label("IP АДРЕС СЕРВЕРА", 0, 48, 9, Muted, true)); _address = Label("—", 0, 68, 19, TextColor, true); panel.Controls.Add(_address);
+            var panel = CardPanel(); panel.Padding = new Padding(22); panel.Controls.Add(Label("◈  ПОДКЛЮЧЕНИЕ К СЕРВЕРУ", 0, 0, 17, TextColor, true)); panel.Controls.Add(Label("IP АДРЕС СЕРВЕРА", 0, 48, 9, Muted, true)); _address = Label("—", 0, 68, 19, TextColor, true); panel.Controls.Add(_address);
             var copy = Button("Копировать", Color.FromArgb(43, 28, 20), TextColor); copy.Location = new Point(240, 64); copy.Width = 110; copy.Click += (s, e) => { if (_address.Text != "—") { Clipboard.SetText(_address.Text); ShowNotice("IP сервера скопирован.", false); } }; panel.Controls.Add(copy);
             panel.Controls.Add(Label("Адрес читается из build-info.txt текущего релиза.", 0, 118, 9, Muted, false)); return panel;
         }
 
         private Control MakeBuildCard()
         {
-            var panel = CardPanel(); panel.Padding = new Padding(22); panel.Controls.Add(Label("⇩  ЗАПУСК ИГРЫ", 0, 0, 17, TextColor, true)); _profile = Label("—", 0, 45, 13, TextColor, true); _meta = Label("—", 0, 70, 9, Muted, false); panel.Controls.Add(_profile); panel.Controls.Add(_meta);
-            _update = Button("Установить / обновить сборку", Orange, Color.FromArgb(23, 13, 6)); _update.Location = new Point(22, 100); _update.Width = 300; _update.Click += async (s, e) => await InstallAsync(); panel.Controls.Add(_update);
+            var panel = CardPanel(); panel.Padding = new Padding(22); panel.Controls.Add(Label("⇩  СБОРКА И ОБНОВЛЕНИЕ", 0, 0, 17, TextColor, true)); _profile = Label("—", 0, 45, 13, TextColor, true); _meta = Label("—", 0, 70, 9, Muted, false); panel.Controls.Add(_profile); panel.Controls.Add(_meta);
+            _update = Button("Проверить и обновить сборку", Orange, Color.FromArgb(23, 13, 6)); _update.Location = new Point(22, 100); _update.Width = 300; _update.Click += async (s, e) => await InstallAsync(); panel.Controls.Add(_update);
             _launch = Button("Запустить Minecraft", Color.FromArgb(43, 28, 20), TextColor); _launch.Location = new Point(22, 140); _launch.Width = 300; _launch.Enabled = false; _launch.Click += async (s, e) => await LaunchAsync(); panel.Controls.Add(_launch);
             _progress = new ProgressBar { Location = new Point(22, 178), Width = 300, Height = 5, Style = ProgressBarStyle.Continuous, Maximum = 100, Visible = false }; panel.Controls.Add(_progress); return panel;
         }
@@ -84,7 +84,7 @@ namespace Veles.Launcher
             {
                 _status.Text = "СТАТУС\nПроверка…"; _latest = await _builds.GetLatestAsync(CancellationToken.None); var info = _latest.Info; var installed = _builds.ReadInstalled(); var needs = _builds.NeedsUpdate(_latest);
                 _version.Text = "v" + info.BuildVersion; _address.Text = info.ServerAddress; _profile.Text = info.BuildName; _meta.Text = string.Format("Minecraft {0} · {1} {2}", info.MinecraftVersion, info.ModLoader, info.ModLoaderVersion); _loader.Text = "МОДЛОАДЕР\n" + info.ModLoader + " " + info.ModLoaderVersion; _minecraft.Text = "ВЕРСИЯ MINECRAFT\n" + info.MinecraftVersion; _status.Text = "СТАТУС\n" + (needs ? "Нужно обновить" : "Готово v" + installed.Version); _launch.Enabled = !needs;
-                _update.Text = needs ? "Установить / обновить сборку" : "Проверить обновления"; if (needs) ShowNotice("Доступна новая сборка. Вход на сервер заблокирован до обновления.", false); else ShowNotice("Сборка актуальна. Можно запускать игру.", true);
+                _update.Text = needs ? "Обновить сборку сервера" : "Проверить обновления"; if (needs) ShowNotice("Доступна новая сборка. Вход на сервер заблокирован до обновления.", false); else ShowNotice("Сборка актуальна. Можно запускать игру.", true);
             }
             catch (Exception error) { _status.Text = "СТАТУС\nОшибка"; ShowNotice(error.Message, false); }
         }

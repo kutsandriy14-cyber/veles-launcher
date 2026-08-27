@@ -16,11 +16,13 @@ for path in required:
     assert path.is_file(), f"missing {path}"
 
 text = "\n".join(path.read_text(encoding="utf-8") for path in required)
-for value in ["veles-modpack-releases", "build-info.txt", "build.zip", "BUILD_VERSION", "MINECRAFT_VERSION", "MOD_LOADER_VERSION", "SERVER_IP", "SERVER_PORT", "VelesLauncherSetup.exe", "SHA256", "servers.dat"]:
+for value in ["veles-modpack-releases", "build-info.txt", "build.zip", "BUILD_VERSION", "MINECRAFT_VERSION", "MOD_LOADER_VERSION", "SERVER_IP", "SERVER_PORT", "VelesLauncherSetup.exe", "SHA256", "servers.dat", "НЕОФИЦИАЛЬНЫЙ СЕРВЕР", "Проверить и обновить сборку"]:
     assert value in text, f"missing contract value: {value}"
 
 assert not (ROOT / "package.json").exists(), "old Electron package still present"
 assert not (ROOT / "src").exists(), "old Electron source directory still present"
+setup = (ROOT / "installer" / "VelesLauncher.iss").read_text(encoding="utf-8")
+assert "Veles.Launcher.exe" in setup and "Veles.Updater.exe" in setup and "Veles.Core.dll" in setup, "main setup must bundle launcher, updater and core DLL"
 assert not re.search(r"github_pat_[A-Za-z0-9_]+", text), "possible GitHub token in source"
 config = (ROOT.parent / "veles-modpack-releases" / "CONFIG.example.txt").read_text(encoding="utf-8")
 for key in ["BUILD_NAME", "BUILD_VERSION", "MINECRAFT_VERSION", "MOD_LOADER", "MOD_LOADER_VERSION", "SERVER_IP", "SERVER_PORT", "LAUNCH_COMMAND", "BUILD_SHA256"]:
