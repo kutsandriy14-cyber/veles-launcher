@@ -50,7 +50,8 @@ jobs:
       - name: Build custom Veles Setup
         shell: powershell
         run: |
-          $version = if ($env:GITHUB_REF_NAME -match '^v') { $env:GITHUB_REF_NAME.Substring(1) } else { '0.0.0-ci' }
+          $version = if ($env:GITHUB_REF_NAME -match '^v') { $env:GITHUB_REF_NAME.Substring(1) } else { (Select-String -Path src-csharp\Veles.Core\ProductInfo.cs -Pattern 'VersionText = "([^"]+)"').Matches.Groups[1].Value }
+          if ([string]::IsNullOrWhiteSpace($version)) { throw 'Could not determine launcher version for custom Setup' }
           msbuild src-csharp\Veles.Setup\Veles.Setup.csproj /t:Build /p:BuildProjectReferences=false /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m
           py -3 tools_pack_setup.py $version
       - name: Upload application binaries and setup files
