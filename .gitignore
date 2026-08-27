@@ -11,6 +11,9 @@
 artifacts/
 dist/
 
+# Node dependencies
+node_modules/
+
 # Secrets and local files
 *.token
 *.secret
