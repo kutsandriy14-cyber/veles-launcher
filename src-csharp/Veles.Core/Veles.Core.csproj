@@ -29,6 +29,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BuildModels.cs" />
+    <Compile Include="BuildArchiveReader.cs" />
     <Compile Include="BuildService.cs" />
     <Compile Include="GitHubClient.cs" />
     <Compile Include="MinecraftServerFile.cs" />

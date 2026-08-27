@@ -25,6 +25,7 @@ namespace Veles.BuildPublisher
         private string _tokenValue;
         private Button _publish;
         private string _selectedZip;
+        private BuildInfo _archiveInfo;
         private readonly Color Orange = Color.FromArgb(249, 115, 22);
         private readonly Color Background = Color.FromArgb(12, 10, 9);
         private readonly Color Card = Color.FromArgb(28, 25, 23);
@@ -33,48 +34,79 @@ namespace Veles.BuildPublisher
 
         public PublisherForm()
         {
-            Text = "Veles Build Publisher"; Width = 920; Height = 820; MinimumSize = new Size(820, 700); BackColor = Background; ForeColor = TextColor; StartPosition = FormStartPosition.CenterScreen; BuildUi();
+            Text = "Veles Build Publisher"; Width = 1180; Height = 1100; MinimumSize = new Size(1180, 1100); BackColor = Background; ForeColor = TextColor; StartPosition = FormStartPosition.CenterScreen; BuildUi();
         }
 
         private void BuildUi()
         {
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(28), ColumnCount = 2, RowCount = 12, BackColor = Background, AutoScroll = true };
-            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50)); root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 42)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));
-            for (var i = 3; i < 10; i++) root.RowStyles.Add(new RowStyle(SizeType.Absolute, 64)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 52)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(45), ColumnCount = 1, RowCount = 18, BackColor = Background, AutoScroll = true };
+            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 70)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 40)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
+            for (var i = 3; i < 15; i++) root.RowStyles.Add(new RowStyle(SizeType.Absolute, 80)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 90)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 60)); root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             Controls.Add(root);
-            var title = Label("V  VELES BUILD PUBLISHER", 16, FontStyle.Bold, TextColor); root.Controls.Add(title, 0, 0); root.SetColumnSpan(title, 2);
-            var repo = Label("Публикация в kutsandriy14-cyber/veles-modpack-releases", 9, FontStyle.Regular, Muted); root.Controls.Add(repo, 0, 1); root.SetColumnSpan(repo, 2);
-            var filePanel = new Panel { Dock = DockStyle.Fill, BackColor = Card, Padding = new Padding(14) }; filePanel.Controls.Add(Label("Архив сборки (.zip)", 9, FontStyle.Regular, Muted)); _zip = TextBoxControl("", true); _zip.Location = new Point(0, 24); _zip.Width = 590; filePanel.Controls.Add(_zip); var choose = Button("Выбрать ZIP", Orange, Color.Black); choose.Location = new Point(610, 22); choose.Width = 150; choose.Click += (s, e) => ChooseZip(); filePanel.Controls.Add(choose); root.Controls.Add(filePanel, 0, 2); root.SetColumnSpan(filePanel, 2);
-            AddPair(root, 3, "Название сборки", _name = TextBoxControl("", false), "Версия сборки", _version = TextBoxControl("", false));
-            AddPair(root, 4, "Версия Minecraft", _minecraft = TextBoxControl("", false), "Модлоадер", _loader = LoaderControl());
-            AddPair(root, 5, "Версия модлоадера", _loaderVersion = TextBoxControl("", false), "Адрес сервера (IP:PORT)", _address = TextBoxControl("", false));
-            AddPair(root, 6, "Название сервера", _serverName = TextBoxControl("", false), "Сайт сервера", _site = TextBoxControl("https://veles-saite.vercel.app/", false));
-            AddPair(root, 7, "Версия Java", _javaVersion = TextBoxControl("17", true), "Папка Java в ZIP", _javaPath = TextBoxControl("runtime\\java", true));
-            AddPair(root, 8, "Память от", _memoryMin = TextBoxControl("2G", false), "Память до", _memoryMax = TextBoxControl("6G", false));
-            var accessPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 8, 0, 0) }; _accessStatus = Label("Доступ GitHub не настроен", 9, FontStyle.Regular, Muted); _accessStatus.Location = new Point(0, 7); accessPanel.Controls.Add(_accessStatus); var access = Button("Настроить доступ", Color.FromArgb(43, 28, 20), TextColor); access.Location = new Point(210, 2); access.Width = 150; access.Click += (s, e) => ConfigureAccess(); accessPanel.Controls.Add(access); root.Controls.Add(accessPanel, 0, 9); root.SetColumnSpan(accessPanel, 2);
-            _publish = Button("Опубликовать сборку", Orange, Color.Black); _publish.Dock = DockStyle.Fill; _publish.Height = 42; _publish.Click += async (s, e) => await PublishAsync(); root.Controls.Add(_publish, 0, 10); root.SetColumnSpan(_publish, 2);
-            _status = Label("Готово. Выберите ZIP и заполните параметры сборки.", 9, FontStyle.Regular, Muted); _status.AutoSize = false; _status.Dock = DockStyle.Fill; root.Controls.Add(_status, 0, 11); root.SetColumnSpan(_status, 2);
+            var title = Label("Veles Build Publisher", 28, FontStyle.Bold, Orange); root.Controls.Add(title, 0, 0);
+            var repo = Label("Публикация в kutsandriy14-cyber/veles-modpack-releases", 14, FontStyle.Regular, Muted); root.Controls.Add(repo, 0, 1);
+            var filePanel = new Panel { Dock = DockStyle.Fill, BackColor = Card, Padding = new Padding(16) }; filePanel.Controls.Add(Label("Архив сборки (.zip)", 14, FontStyle.Regular, Muted)); _zip = TextBoxControl("", true); _zip.Location = new Point(0, 38); _zip.Width = 800; _zip.Font = new Font("Segoe UI", 16); filePanel.Controls.Add(_zip); var choose = Button("Выбрать ZIP", Orange, Color.Black); choose.Location = new Point(820, 34); choose.Width = 220; choose.Height = 48; choose.Font = new Font("Segoe UI", 14, FontStyle.Bold); choose.Click += (s, e) => ChooseZip(); filePanel.Controls.Add(choose); root.Controls.Add(filePanel, 0, 2);
+            root.Controls.Add(FieldPanel("Название сборки", _name = TextBoxControl("", true)), 0, 3);
+            root.Controls.Add(FieldPanel("Версия сборки", _version = TextBoxControl("", true)), 0, 4);
+            root.Controls.Add(FieldPanel("Версия Minecraft", _minecraft = TextBoxControl("", true)), 0, 5);
+            root.Controls.Add(FieldPanel("Модлоадер", _loader = LoaderControl()), 0, 6);
+            root.Controls.Add(FieldPanel("Версия модлоадера", _loaderVersion = TextBoxControl("", true)), 0, 7);
+            root.Controls.Add(FieldPanel("Адрес сервера (IP:PORT)", _address = TextBoxControl("", true)), 0, 8);
+            root.Controls.Add(FieldPanel("Название сервера", _serverName = TextBoxControl("", true)), 0, 9);
+            root.Controls.Add(FieldPanel("Сайт сервера", _site = TextBoxControl("", true)), 0, 10);
+            root.Controls.Add(FieldPanel("Версия Java", _javaVersion = TextBoxControl("", true)), 0, 11);
+            root.Controls.Add(FieldPanel("Папка Java в ZIP", _javaPath = TextBoxControl("", true)), 0, 12);
+            root.Controls.Add(FieldPanel("Память от", _memoryMin = TextBoxControl("", true)), 0, 13);
+            root.Controls.Add(FieldPanel("Память до", _memoryMax = TextBoxControl("", true)), 0, 14);
+            SetMetadataFieldsReadOnly();
+            var bottomPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Padding = new Padding(0, 15, 0, 0) };
+            var access = Button("Настроить доступ", Color.FromArgb(43, 28, 20), TextColor); access.Width = 220; access.Height = 54; access.Font = new Font("Segoe UI", 14); access.Click += (s, e) => ConfigureAccess();
+            _publish = Button("Опубликовать сборку", Orange, Color.Black); _publish.Width = 320; _publish.Height = 54; _publish.Font = new Font("Segoe UI", 14, FontStyle.Bold); _publish.Margin = new Padding(25, 0, 0, 0); _publish.Click += async (s, e) => await PublishAsync();
+            bottomPanel.Controls.Add(access); bottomPanel.Controls.Add(_publish); root.Controls.Add(bottomPanel, 0, 15);
+            _accessStatus = Label("Доступ GitHub не настроен", 12, FontStyle.Regular, Muted); root.Controls.Add(_accessStatus, 0, 16);
+            _status = Label("Готово. Выберите ZIP с metadata внутри.", 12, FontStyle.Regular, Muted); _status.AutoSize = false; _status.Dock = DockStyle.Fill; root.Controls.Add(_status, 0, 17);
         }
 
         private void AddPair(TableLayoutPanel root, int row, string leftCaption, Control left, string rightCaption, Control right)
         {
             var leftPanel = FieldPanel(leftCaption, left); var rightPanel = FieldPanel(rightCaption, right); root.Controls.Add(leftPanel, 0, row); root.Controls.Add(rightPanel, 1, row);
         }
-        private Panel FieldPanel(string caption, Control input) { var panel = new Panel { Dock = DockStyle.Fill, BackColor = Card, Padding = new Padding(12, 7, 12, 4) }; panel.Controls.Add(Label(caption, 9, FontStyle.Regular, Muted)); input.Location = new Point(0, 25); input.Width = 350; input.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top; panel.Controls.Add(input); return panel; }
-        private ComboBox LoaderControl() { var box = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, BackColor = Color.FromArgb(15, 12, 11), ForeColor = Color.White, FlatStyle = FlatStyle.Flat }; box.Items.AddRange(new object[] { "Forge", "Fabric", "Quilt", "NeoForge" }); box.SelectedIndex = 0; return box; }
+        private Panel FieldPanel(string caption, Control input) { var panel = new Panel { Dock = DockStyle.Fill, BackColor = Card, Padding = new Padding(16, 10, 16, 10) }; panel.Controls.Add(Label(caption, 14, FontStyle.Regular, Muted)); input.Location = new Point(0, 38); input.Width = 1040; input.Font = new Font("Segoe UI", 16); input.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top; panel.Controls.Add(input); return panel; }
+        private ComboBox LoaderControl() { var box = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, BackColor = Color.FromArgb(15, 12, 11), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 16) }; box.Items.AddRange(new object[] { "Forge", "Fabric", "Quilt", "NeoForge" }); box.SelectedIndex = 0; return box; }
         private TextBox TextBoxControl(string value, bool readOnly) { return new TextBox { Text = value, ReadOnly = readOnly, BackColor = Color.FromArgb(15, 12, 11), ForeColor = TextColor, BorderStyle = BorderStyle.FixedSingle, Height = 28 }; }
         private Label Label(string text, float size, FontStyle style, Color color) { return new Label { Text = text, AutoSize = true, Font = new Font("Segoe UI", size, style), ForeColor = color }; }
         private Button Button(string text, Color background, Color foreground) { return new Button { Text = text, BackColor = background, ForeColor = foreground, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9, FontStyle.Bold) }; }
 
         private void ChooseZip()
         {
-            using (var dialog = new OpenFileDialog { Filter = "ZIP archive (*.zip)|*.zip", Title = "Выберите архив сборки" }) if (dialog.ShowDialog(this) == DialogResult.OK) { _selectedZip = dialog.FileName; _zip.Text = Path.GetFileName(_selectedZip); _status.Text = "Архив выбран. Обязательные файлы будут проверены перед публикацией."; }
+            using (var dialog = new OpenFileDialog { Filter = "ZIP archive (*.zip)|*.zip", Title = "Выберите архив сборки" })
+            {
+                if (dialog.ShowDialog(this) != DialogResult.OK) return;
+                _selectedZip = dialog.FileName; _zip.Text = Path.GetFileName(_selectedZip); _archiveInfo = null;
+                try
+                {
+                    _archiveInfo = BuildArchiveMetadata.Read(_selectedZip);
+                    FillMetadata(_archiveInfo.Info);
+                    _status.Text = "Проверено автоматически: metadata, launch.json и встроенная Java найдены.";
+                }
+                catch (Exception error) { _selectedZip = null; _zip.Text = string.Empty; _status.Text = error.Message; MessageBox.Show(this, error.Message, "Архив не прошёл проверку", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+            }
+        }
+
+        private void SetMetadataFieldsReadOnly()
+        {
+            _name.ReadOnly = true; _version.ReadOnly = true; _minecraft.ReadOnly = true; _loaderVersion.ReadOnly = true; _address.ReadOnly = true; _serverName.ReadOnly = true; _site.ReadOnly = true; _javaVersion.ReadOnly = true; _javaPath.ReadOnly = true; _memoryMin.ReadOnly = true; _memoryMax.ReadOnly = true; _loader.Enabled = false;
+        }
+
+        private void FillMetadata(BuildInfo info)
+        {
+            _name.Text = info.BuildName; _version.Text = info.BuildVersion; _minecraft.Text = info.MinecraftVersion; _loader.SelectedItem = info.ModLoader; _loaderVersion.Text = info.ModLoaderVersion; _address.Text = info.ServerAddress; _serverName.Text = info.ServerName; _site.Text = info.SiteUrl; _javaVersion.Text = info.JavaVersion; _javaPath.Text = info.JavaRuntimePath; _memoryMin.Text = info.MemoryMin; _memoryMax.Text = info.MemoryMax;
         }
 
         private async Task PublishAsync()
         {
-            if (string.IsNullOrWhiteSpace(_selectedZip)) { Warn("Выберите ZIP-архив сборки."); return; }
+            if (string.IsNullOrWhiteSpace(_selectedZip) || _archiveInfo == null) { Warn("Выберите ZIP с корректной metadata внутри архива."); return; }
             if (string.IsNullOrWhiteSpace(_tokenValue)) { Warn("Сначала настройте доступ GitHub отдельной кнопкой."); return; }
             if (string.IsNullOrWhiteSpace(_name.Text) || string.IsNullOrWhiteSpace(_version.Text) || string.IsNullOrWhiteSpace(_minecraft.Text) || string.IsNullOrWhiteSpace(_loaderVersion.Text) || string.IsNullOrWhiteSpace(_address.Text) || string.IsNullOrWhiteSpace(_serverName.Text)) { Warn("Заполните все обязательные поля сборки."); return; }
             string ip; int port; if (!ServerAddressParser.TryParse(_address.Text, out ip, out port)) { Warn("Адрес должен иметь вид IP:PORT, например 213.152.43.53:25589."); return; }
@@ -82,7 +114,7 @@ namespace Veles.BuildPublisher
             if (!string.Equals(_javaVersion.Text.Trim(), "17", StringComparison.OrdinalIgnoreCase)) { Warn("Для Minecraft 1.20.1 и этой схемы запуска требуется Java 17."); return; }
             try
             {
-                ValidateArchive(); _publish.Enabled = false; _status.Text = "Создание GitHub Release…"; var sha256 = ComputeSha256(_selectedZip);
+                BuildArchiveMetadata.Read(_selectedZip); _publish.Enabled = false; _status.Text = "Создание GitHub Release…"; var sha256 = ComputeSha256(_selectedZip);
                 var info = string.Join(Environment.NewLine, new[] { "# Generated by Veles Build Publisher", "BUILD_NAME=" + _name.Text.Trim(), "BUILD_VERSION=" + _version.Text.Trim(), "MINECRAFT_VERSION=" + _minecraft.Text.Trim(), "MOD_LOADER=" + _loader.SelectedItem, "MOD_LOADER_VERSION=" + _loaderVersion.Text.Trim(), "SERVER_ADDRESS=" + ip + ":" + port, "SERVER_NAME=" + _serverName.Text.Trim(), "SITE_URL=" + _site.Text.Trim(), "MOD_LOADER_PROFILE=launch.json", "JAVA_VERSION=17", "JAVA_VENDOR=BellSoft Liberica", "JAVA_RUNTIME_PATH=runtime\\java", "MEMORY_MIN=" + _memoryMin.Text.Trim(), "MEMORY_MAX=" + _memoryMax.Text.Trim(), "BUILD_SHA256=" + sha256 }) + Environment.NewLine;
                 var temp = Path.Combine(Path.GetTempPath(), "veles-build-info-" + Guid.NewGuid().ToString("N") + ".txt"); File.WriteAllText(temp, info);
                 var api = new GitHubClient("kutsandriy14-cyber", "veles-modpack-releases", _tokenValue); var tag = "build-" + _version.Text.Trim().TrimStart('v', 'V'); var release = await api.CreateReleaseAsync(tag, _name.Text.Trim() + " v" + _version.Text.Trim(), "Опубликовано через Veles Build Publisher.", CancellationToken.None);
@@ -93,21 +125,7 @@ namespace Veles.BuildPublisher
             finally { _publish.Enabled = true; }
         }
 
-        private void ValidateArchive()
-        {
-            using (var archive = ZipFile.OpenRead(_selectedZip))
-            {
-                var hasProfile = false; var hasJava = false;
-                foreach (var entry in archive.Entries)
-                {
-                    var path = entry.FullName.Replace('\\', '/').TrimStart('/');
-                    if (string.Equals(path, "launch.json", StringComparison.OrdinalIgnoreCase)) hasProfile = true;
-                    if (string.Equals(path, "runtime/java/bin/javaw.exe", StringComparison.OrdinalIgnoreCase) || string.Equals(path, "runtime/java/bin/java.exe", StringComparison.OrdinalIgnoreCase)) hasJava = true;
-                }
-                if (!hasProfile) throw new InvalidDataException("В ZIP нет launch.json с параметрами запуска Minecraft.");
-                if (!hasJava) throw new InvalidDataException("В ZIP нет встроенной Java: runtime\\java\\bin\\javaw.exe.");
-            }
-        }
+        private void ValidateArchive() { BuildArchiveMetadata.Read(_selectedZip); }
         private void ConfigureAccess()
         {
             using (var dialog = new TokenForm()) if (dialog.ShowDialog(this) == DialogResult.OK) { _tokenValue = dialog.Token; _accessStatus.Text = "Доступ GitHub настроен только на время работы панели"; _accessStatus.ForeColor = Color.LightGreen; }
