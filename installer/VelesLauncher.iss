@@ -1,7 +1,7 @@
 [Setup]
 AppId={{B3A8B12D-4D4A-43E8-9D75-000000000001}}
 AppName=Veles Launcher
-AppVersion=0.1.2
+AppVersion=0.1.3
 AppPublisher=Veles PlayGame
 DefaultDirName={localappdata}\Programs\Veles Launcher
 DefaultGroupName=Veles Launcher
@@ -26,9 +26,11 @@ end;
 [Files]
 Source: "..\src-csharp\Veles.Launcher\bin\Release\Veles.Launcher.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\src-csharp\Veles.Launcher\bin\Release\Veles.Core.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\src-csharp\Veles.Updater\bin\Release\Veles.Updater.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{userprograms}\Veles Launcher"; Filename: "{app}\Veles.Launcher.exe"
+Name: "{userprograms}\Veles Launcher Updater"; Filename: "{app}\Veles.Updater.exe"
 Name: "{userdesktop}\Veles Launcher"; Filename: "{app}\Veles.Launcher.exe"; Tasks: desktopicon
 
 [Tasks]

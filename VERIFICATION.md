@@ -13,7 +13,7 @@
 | Репозиторий сборок | Клиент читает только последний публичный GitHub Release из `veles-modpack-releases`. |
 | Админ-панель | Отдельный C# EXE формирует `build-info.txt`, считает SHA-256, создаёт release и загружает `build.zip` и TXT. Токен не сохраняется. |
 | Updater | Отдельный C# EXE ищет `VelesLauncherSetup.exe` в последнем релизе `veles-launcher`. |
-| Setup | Inno Setup успешно создал три независимых установщика с разными AppId, каталогами и ярлыками. Каждый проверяет .NET Framework 4.8. |
+| Setup | Inno Setup успешно создал три установщика с разными AppId, каталогами и ярлыками. Основной VelesLauncherSetup дополнительно кладёт отдельный `Veles.Updater.exe` рядом с Launcher; каждый setup проверяет .NET Framework 4.8. |
 | Публичные репозитории | Оба репозитория публичные, ветка `main`, без незакоммиченных изменений. |
 
 ## Артефакты
