@@ -18,7 +18,7 @@ for path in required:
     assert path.is_file(), f"missing {path}"
 
 text = "\n".join(path.read_text(encoding="utf-8") for path in required)
-for value in ["veles-modpack-releases", "build-info.txt", "build.zip", "BUILD_VERSION", "MINECRAFT_VERSION", "MOD_LOADER_VERSION", "SERVER_ADDRESS", "launch.json", "JAVA_RUNTIME_PATH", "VelesLauncherSetup.exe", "SHA256", "servers.dat", "Проверить и обновить сборку", "Настройки"]:
+for value in ["veles-modpack-releases", "build-info.txt", "build.zip", "BUILD_VERSION", "MINECRAFT_VERSION", "MOD_LOADER_VERSION", "SERVER_ADDRESS", "launch.json", "JAVA_RUNTIME_PATH", "VelesLauncherSetup.exe", "SHA256", "servers.dat", "Проверить и обновить сборку", "Настройки", "CheckLauncherUpdateAsync", "--auto", "--wait-pid"]:
     assert value in text, f"missing contract value: {value}"
 
 for forbidden in ["LaunchCommand", "LAUNCH_COMMAND=", "SERVER_IP=", "SERVER_PORT="]:

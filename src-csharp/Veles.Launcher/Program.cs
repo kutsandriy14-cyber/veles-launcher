@@ -37,7 +37,7 @@ namespace Veles.Launcher
         public LauncherForm()
         {
             Text = "Veles Launcher"; Width = 1040; Height = 680; MinimumSize = new Size(900, 600); BackColor = Background; ForeColor = TextColor; StartPosition = FormStartPosition.CenterScreen;
-            BuildUi(); Shown += async (s, e) => await RefreshAsync();
+            BuildUi(); Shown += async (s, e) => { await RefreshAsync(); await CheckLauncherUpdateAsync(true); };
         }
 
         private void BuildUi()
@@ -48,7 +48,7 @@ namespace Veles.Launcher
             var header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Background, Margin = new Padding(0) }; header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65)); header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
             _brand = new Label { Text = "V  VELES PLAYGAME\n     SERVER LAUNCHER", AutoSize = false, Dock = DockStyle.Fill, Font = new Font("Segoe UI", 12, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.MiddleLeft };
             var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 7, 0, 0), BackColor = Background };
-            var site = Button("Сайт сервера", Color.FromArgb(33, 25, 19), TextColor); site.Click += (s, e) => OpenUrl("https://veles-saite.vercel.app/"); _settingsButton = Button("Настройки", Color.FromArgb(33, 25, 19), TextColor); _settingsButton.Click += (s, e) => ShowSettings(); actions.Controls.Add(site); actions.Controls.Add(_settingsButton); header.Controls.Add(_brand, 0, 0); header.Controls.Add(actions, 1, 0); root.Controls.Add(header, 0, 0); root.SetColumnSpan(header, 2);
+            var site = Button("Сайт сервера", Color.FromArgb(33, 25, 19), TextColor); site.Click += (s, e) => OpenUrl("https://veles-saite.vercel.app/"); var checkLauncher = Button("Обновить Launcher", Color.FromArgb(33, 25, 19), TextColor); checkLauncher.Click += async (s, e) => await CheckLauncherUpdateAsync(true); _settingsButton = Button("Настройки", Color.FromArgb(33, 25, 19), TextColor); _settingsButton.Click += (s, e) => ShowSettings(); actions.Controls.Add(site); actions.Controls.Add(checkLauncher); actions.Controls.Add(_settingsButton); header.Controls.Add(_brand, 0, 0); header.Controls.Add(actions, 1, 0); root.Controls.Add(header, 0, 0); root.SetColumnSpan(header, 2);
             var hero = new Panel { Dock = DockStyle.Fill }; root.Controls.Add(hero, 0, 1); root.SetColumnSpan(hero, 2);
             _title = new Label { Text = "Серверная сборка", AutoSize = false, Width = 680, Height = 46, Location = new Point(0, 16), Font = new Font("Segoe UI", 26, FontStyle.Bold), ForeColor = Orange, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true };
             _subtitle = new Label { Text = "НЕОФИЦИАЛЬНЫЙ СЕРВЕР  •  ОНЛАЙН   ·   ВЫЖИВАНИЕ / КВЕСТЫ", AutoSize = false, Width = 680, Height = 24, Location = new Point(3, 70), Font = new Font("Segoe UI", 10), ForeColor = Muted, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true }; _version = new Label { Text = "v—", AutoSize = true, Location = new Point(720, 38), Font = new Font("Segoe UI", 20, FontStyle.Bold), ForeColor = Orange };
@@ -113,6 +113,18 @@ namespace Veles.Launcher
         private static string Quote(string value) { return "\"" + (value ?? string.Empty).Replace("\"", "\\\"") + "\""; }
         private string GetFriendlyError(Exception error) { var message = error == null ? string.Empty : error.Message; if (message.IndexOf("404", StringComparison.OrdinalIgnoreCase) >= 0 || message.IndexOf("пустой релиз", StringComparison.OrdinalIgnoreCase) >= 0 || message.IndexOf("Последний релиз", StringComparison.OrdinalIgnoreCase) >= 0) return "Сборка сервера пока не опубликована."; if (message.IndexOf("build-info.txt", StringComparison.OrdinalIgnoreCase) >= 0) return "Релиз сборки заполнен неправильно. Обратитесь к администратору сервера."; if (message.IndexOf("SHA-256", StringComparison.OrdinalIgnoreCase) >= 0) return "Архив сборки повреждён или не прошёл проверку целостности."; return "Не удалось проверить сборку. Проверьте подключение к интернету."; }
         private void ShowNotice(string text, bool success) { if (_notice == null) return; _notice.Text = text; _notice.ForeColor = success ? Color.LightGreen : Color.FromArgb(255, 190, 150); _notice.Visible = true; }
+        private async Task CheckLauncherUpdateAsync(bool askUser)
+        {
+            try
+            {
+                var github = new GitHubClient("kutsandriy14-cyber", "veles-launcher"); var release = await github.GetLatestReleaseAsync(CancellationToken.None); Version latestVersion; if (!Version.TryParse((release.TagName ?? "0").TrimStart('v', 'V'), out latestVersion) || latestVersion <= ProductInfo.Version) { if (askUser) ShowNotice("Veles Launcher уже обновлён до последней версии.", true); return; }
+                var asset = release.Assets == null ? null : release.Assets.Find(x => string.Equals(x.Name, "VelesLauncherSetup.exe", StringComparison.OrdinalIgnoreCase)); if (asset == null) { if (askUser) ShowNotice("Новая версия найдена, но установщик пока недоступен.", false); return; }
+                var answer = MessageBox.Show(this, "Доступна новая версия Veles Launcher v" + latestVersion + ". Обновить приложение сейчас?", "Обновление лаунчера", MessageBoxButtons.YesNo, MessageBoxIcon.Information); if (answer != DialogResult.Yes) return;
+                var updater = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Veles.Updater.exe"); if (!File.Exists(updater)) { ShowNotice("Служебный обновлятор не найден рядом с Launcher.", false); return; }
+                Process.Start(new ProcessStartInfo { FileName = updater, Arguments = "--auto --wait-pid " + Process.GetCurrentProcess().Id, WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory, UseShellExecute = true }); Application.Exit();
+            }
+            catch { if (askUser) ShowNotice("Не удалось проверить обновление Launcher. Можно попробовать позже.", false); }
+        }
         private void ShowSettings()
         {
             using (var dialog = new SettingsForm(_builds.Settings, _builds.InstanceDirectory))

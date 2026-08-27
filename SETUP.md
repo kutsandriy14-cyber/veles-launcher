@@ -22,6 +22,6 @@
 
 ## Обновление самого лаунчера
 
-Для обновления приложения запустите `Veles.Updater.exe` из папки Veles Launcher. Он сравнит встроенную версию с последним релизом `kutsandriy14-cyber/veles-launcher`, найдёт asset с точным именем `VelesLauncherSetup.exe`, скачает установщик и запустит его. Updater не является обновлятором Minecraft-сборки: сборка обновляется внутри главного Veles Launcher.
+При каждом открытии Veles Launcher автоматически проверяет последний релиз `kutsandriy14-cyber/veles-launcher`. Если доступна новая версия, игрок подтверждает обновление, после чего `Veles.Updater.exe` ждёт закрытия Launcher, скачивает asset с точным именем `VelesLauncherSetup.exe`, запускает новый установщик и завершает старый процесс. Ручной запуск Updater не нужен. Updater не является обновлятором Minecraft-сборки: сборка обновляется внутри главного Veles Launcher.
 
 Последний ранее проверенный стабильный релиз: [Veles Launcher v0.1.5](https://github.com/kutsandriy14-cyber/veles-launcher/releases/tag/v0.1.5). Новая версия не считается проверенной до успешного Windows CI и проверки состава установщиков.

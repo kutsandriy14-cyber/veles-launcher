@@ -14,7 +14,12 @@ namespace Veles.Updater
     internal static class Program
     {
         [STAThread]
-        private static void Main() { ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12; Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false); Application.Run(new UpdaterForm()); }
+        private static void Main(string[] args)
+        {
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12; var automatic = false; var waitPid = 0;
+            for (var i = 0; i < (args ?? new string[0]).Length; i++) { if (string.Equals(args[i], "--auto", StringComparison.OrdinalIgnoreCase)) automatic = true; if (string.Equals(args[i], "--wait-pid", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length) int.TryParse(args[++i], out waitPid); }
+            Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false); Application.Run(new UpdaterForm(automatic, waitPid));
+        }
     }
 
     internal sealed class UpdaterForm : Form
@@ -22,10 +27,10 @@ namespace Veles.Updater
         private readonly GitHubClient _github = new GitHubClient("kutsandriy14-cyber", "veles-launcher");
         private readonly HttpClient _http = new HttpClient();
         private readonly Version _current = ProductInfo.Version;
-        private Label _status, _versions; private Button _install; private ReleaseInfo _release;
-        public UpdaterForm()
+        private Label _status, _versions; private Button _install; private ReleaseInfo _release; private readonly bool _automatic; private readonly int _waitPid;
+        public UpdaterForm(bool automatic, int waitPid)
         {
-            Text = "Veles Launcher Updater"; Width = 560; Height = 360; BackColor = Color.FromArgb(16, 11, 8); ForeColor = Color.White; StartPosition = FormStartPosition.CenterScreen; BuildUi(); Shown += async (s, e) => await CheckAsync();
+            _automatic = automatic; _waitPid = waitPid; Text = "Veles Launcher Updater"; Width = 560; Height = 360; BackColor = Color.FromArgb(16, 11, 8); ForeColor = Color.White; StartPosition = FormStartPosition.CenterScreen; BuildUi(); Shown += async (s, e) => await CheckAsync();
         }
         private void BuildUi()
         {
@@ -37,16 +42,20 @@ namespace Veles.Updater
             try
             {
                 _release = await _github.GetLatestReleaseAsync(CancellationToken.None); var latest = ParseVersion(_release.TagName); _versions.Text = "Установлено: v" + _current + " · Последняя: v" + latest;
-                if (latest > _current) { _status.Text = "Доступна новая версия лаунчера."; _install.Enabled = FindAsset(_release, "VelesLauncherSetup.exe") != null; if (!_install.Enabled) _status.Text = "Релиз найден, но установщик VelesLauncherSetup.exe отсутствует."; }
-                else _status.Text = "Установлена последняя версия лаунчера.";
+                if (latest > _current) { _status.Text = "Доступна новая версия лаунчера."; _install.Enabled = FindAsset(_release, "VelesLauncherSetup.exe") != null; if (!_install.Enabled) _status.Text = "Релиз найден, но установщик VelesLauncherSetup.exe отсутствует."; else if (_automatic) await InstallAsync(); }
+                else { _status.Text = "Установлена последняя версия лаунчера."; if (_automatic) Application.Exit(); }
             }
-            catch (Exception error) { _status.Text = error.Message; }
+            catch (Exception error) { _status.Text = _automatic ? "Не удалось проверить обновление." : error.Message; if (_automatic) Application.Exit(); }
         }
         private async Task InstallAsync()
         {
             var asset = FindAsset(_release, "VelesLauncherSetup.exe"); if (asset == null) return;
-            try { _install.Enabled = false; _status.Text = "Скачивание установщика…"; var path = Path.Combine(Path.GetTempPath(), "VelesLauncherSetup.exe"); var data = await _http.GetByteArrayAsync(asset.BrowserDownloadUrl); File.WriteAllBytes(path, data); Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); Application.Exit(); }
-            catch (Exception error) { _status.Text = error.Message; _install.Enabled = true; }
+            try { _install.Enabled = false; _status.Text = "Подготовка обновления…"; if (_waitPid > 0) await WaitForProcessExitAsync(_waitPid); _status.Text = "Скачивание установщика…"; var path = Path.Combine(Path.GetTempPath(), "VelesLauncherSetup-" + Guid.NewGuid().ToString("N") + ".exe"); var data = await _http.GetByteArrayAsync(asset.BrowserDownloadUrl); File.WriteAllBytes(path, data); Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); Application.Exit(); }
+            catch (Exception error) { _status.Text = _automatic ? "Не удалось установить обновление." : error.Message; _install.Enabled = !_automatic; if (_automatic) await Task.Delay(2500); if (_automatic) Application.Exit(); }
+        }
+        private static async Task WaitForProcessExitAsync(int pid)
+        {
+            for (var i = 0; i < 120; i++) { try { using (var process = Process.GetProcessById(pid)) { if (process.HasExited) return; } } catch { return; } await Task.Delay(250); }
         }
         private static Version ParseVersion(string value) { Version result; return Version.TryParse((value ?? "0").TrimStart('v', 'V').Replace("build-", ""), out result) ? result : new Version(0, 0); }
         private static ReleaseAsset FindAsset(ReleaseInfo release, string name) { foreach (var asset in release.Assets) if (string.Equals(asset.Name, name, StringComparison.OrdinalIgnoreCase)) return asset; return null; }
