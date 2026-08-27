@@ -15,11 +15,11 @@
 
 ## Что было подтверждено ранее
 
-Предыдущий Windows CI успешно собирал Veles.Core, Launcher, Build Publisher и Updater; core-тесты подтверждали разбор TXT с BOM и комментариями, сравнение версий, проверку порта и запись `servers.dat`. Inno Setup создавал два установщика: `VelesLauncherSetup.exe` с Launcher/Updater/Core и отдельный `VelesBuildPublisherSetup.exe`.
+Предыдущий Windows CI успешно собирал Veles.Core, Launcher, Build Publisher и Updater; core-тесты подтверждали разбор TXT с BOM и комментариями, сравнение версий, проверку порта и запись `servers.dat`. Новый pipeline должен создавать два собственных Veles Setup с payload-манифестами: `VelesLauncherSetup.exe` с Launcher/Updater/Core и отдельный `VelesBuildPublisherSetup.exe`.
 
 ## Подтверждение v0.1.6
 
-Windows CI run `33068742727` для коммита `8a5f7e7` завершился успешно: Core-тесты, Launcher, Publisher, Updater и Inno Setup прошли без ошибок. В скачанном артефакте присутствуют ровно два setup-файла: `VelesLauncherSetup.exe` и `VelesBuildPublisherSetup.exe`. Отдельного `VelesLauncherUpdaterSetup.exe` нет. SHA-256 артефактов сохранён в журнале CI-проверки.
+Для предыдущей Inno-версии run `33068742727` завершился успешно. После перехода на custom Setup требуется новый CI: он должен собрать `Veles.Setup`, упаковать два payload-setup, проверить иконки, состав архива, замену существующей версии и отсутствие `VelesLauncherUpdaterSetup.exe`.
 
 Локальная среда Linux не содержит MSBuild для .NET Framework 4.8, поэтому локальная проверка ограничена статическим валидатором и `git diff --check`. Windows-сборка подтверждена GitHub Actions.
 
