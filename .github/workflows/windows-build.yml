@@ -22,7 +22,7 @@ jobs:
           pnpm --dir src-web-ui install --no-frozen-lockfile
           pnpm --dir src-web-ui run build
           New-Item -ItemType Directory -Force src-csharp\Veles.Launcher\WebUi | Out-Null
-          Copy-Item src-web-ui\dist\index.html,src-web-ui\dist\main.js,src-web-ui\dist\styles.css src-csharp\Veles.Launcher\WebUi\ -Force
+          Copy-Item src-web-ui\index.html,src-web-ui\styles.css,src-web-ui\dist\main.js src-csharp\Veles.Launcher\WebUi\ -Force
       - name: Build core library
         shell: powershell
         run: msbuild src-csharp\Veles.Core\Veles.Core.csproj /t:Restore,Build /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m
