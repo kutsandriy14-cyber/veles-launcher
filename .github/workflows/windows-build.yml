@@ -15,6 +15,14 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
+      - name: Build TypeScript Web UI
+        shell: powershell
+        run: |
+          corepack enable
+          pnpm --dir src-web-ui install --no-frozen-lockfile
+          pnpm --dir src-web-ui run build
+          New-Item -ItemType Directory -Force src-csharp\Veles.Launcher\WebUi | Out-Null
+          Copy-Item src-web-ui\dist\index.html,src-web-ui\dist\main.js,src-web-ui\dist\styles.css src-csharp\Veles.Launcher\WebUi\ -Force
       - name: Build core library
         shell: powershell
         run: msbuild src-csharp\Veles.Core\Veles.Core.csproj /t:Restore,Build /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m

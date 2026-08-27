@@ -6,6 +6,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Win32;
 using Veles.Core;
 
 namespace Veles.Launcher
@@ -16,7 +17,8 @@ namespace Veles.Launcher
         private static void Main()
         {
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new LauncherForm());
         }
     }
@@ -24,133 +26,212 @@ namespace Veles.Launcher
     internal sealed class LauncherForm : Form
     {
         private readonly BuildService _builds = new BuildService();
+        private readonly WebBrowser _browser = new WebBrowser();
         private BuildSnapshot _latest;
-        private Label _brand, _title, _subtitle, _version, _address, _profile, _meta, _loader, _minecraft, _status, _notice;
-        private Button _update, _launch, _settingsButton;
-        private ProgressBar _progress;
-        private readonly Color Background = Color.FromArgb(12, 10, 9);
-        private readonly Color Card = Color.FromArgb(28, 25, 23);
-        private readonly Color Orange = Color.FromArgb(249, 115, 22);
-        private readonly Color TextColor = Color.FromArgb(250, 250, 249);
-        private readonly Color Muted = Color.FromArgb(168, 162, 158);
+        private bool _busy;
+        private string _lastNotice = "Сборка сервера пока не опубликована.";
 
         public LauncherForm()
         {
-            Text = "Veles Launcher"; Width = 1180; Height = 760; MinimumSize = new Size(1050, 700); BackColor = Background; ForeColor = TextColor; StartPosition = FormStartPosition.CenterScreen; AutoScaleMode = AutoScaleMode.Dpi;
-            BuildUi(); Shown += async (s, e) => { await RefreshAsync(); await CheckLauncherUpdateAsync(false); };
+            Text = "Veles Launcher";
+            Width = 1180;
+            Height = 760;
+            MinimumSize = new Size(900, 620);
+            BackColor = Color.FromArgb(13, 11, 10);
+            StartPosition = FormStartPosition.CenterScreen;
+            AutoScaleMode = AutoScaleMode.Dpi;
+            EnableIe11Mode();
+            BuildUi();
+            Shown += async (s, e) => { await RefreshAsync(); await CheckLauncherUpdateAsync(false); };
         }
 
         private void BuildUi()
         {
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(30, 22, 30, 18), RowCount = 5, ColumnCount = 3, BackColor = Background };
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 58)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 128)); root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 38)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 24)); root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33)); root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33)); root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34)); Controls.Add(root);
-            var header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Background, Margin = new Padding(0) }; header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60)); header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
-            var brand = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Background, Margin = new Padding(0) }; brand.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 42)); brand.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); brand.Controls.Add(new Label { Text = "V", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 30, FontStyle.Bold), ForeColor = Orange, TextAlign = ContentAlignment.MiddleLeft }, 0, 0); brand.Controls.Add(new Label { Text = "VELES PLAYGAME  /  SERVER LAUNCHER", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 12, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.MiddleLeft }, 1, 0);
-            var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 6, 0, 0), BackColor = Background }; _settingsButton = Button("Настройки", Color.FromArgb(33, 25, 19), TextColor); ApplyIcon(_settingsButton, "settings.png"); _settingsButton.Width = 150; _settingsButton.Click += (s, e) => ShowSettings(); var site = Button("Сайт сервера", Color.FromArgb(33, 25, 19), TextColor); ApplyIcon(site, "server.png"); site.Width = 160; site.Click += (s, e) => OpenUrl("https://veles-saite.vercel.app/"); actions.Controls.Add(site); actions.Controls.Add(_settingsButton); header.Controls.Add(brand, 0, 0); header.Controls.Add(actions, 1, 0); root.Controls.Add(header, 0, 0); root.SetColumnSpan(header, 3);
-            var hero = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, BackColor = Background, Margin = new Padding(0) }; hero.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 86)); hero.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); hero.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100)); var heroIcon = LoadUiIcon("build.png", 62); Control heroImage = heroIcon == null ? (Control)new Label { Text = "", Dock = DockStyle.Fill } : new PictureBox { Image = heroIcon, SizeMode = PictureBoxSizeMode.Zoom, Dock = DockStyle.Fill, Margin = new Padding(8) }; hero.Controls.Add(heroImage, 0, 0); var heroText = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = Background, Margin = new Padding(0) }; heroText.RowStyles.Add(new RowStyle(SizeType.Percent, 68)); heroText.RowStyles.Add(new RowStyle(SizeType.Percent, 32)); _title = new Label { Text = "Серверная сборка", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 27, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.BottomLeft, AutoEllipsis = true }; _subtitle = new Label { Text = "СЕРВЕРНАЯ СБОРКА  •  ОНЛАЙН   ·   ВЫЖИВАНИЕ / КВЕСТЫ", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 10), ForeColor = Muted, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true }; heroText.Controls.Add(_title, 0, 0); heroText.Controls.Add(_subtitle, 0, 1); _version = new Label { Text = "v—", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 20, FontStyle.Bold), ForeColor = Orange, TextAlign = ContentAlignment.MiddleRight }; hero.Controls.Add(heroText, 1, 0); hero.Controls.Add(_version, 2, 0); root.Controls.Add(hero, 0, 1); root.SetColumnSpan(hero, 3);
-            root.Controls.Add(MakeServerCard(), 0, 2); root.Controls.Add(MakeBuildCard(), 1, 2); root.SetColumnSpan(root.GetControlFromPosition(1, 2), 2);
-            _notice = new Label { AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = Muted, BackColor = Background, Font = new Font("Segoe UI", 9), Visible = false, AutoEllipsis = true }; root.Controls.Add(_notice, 0, 3); root.SetColumnSpan(_notice, 3); var footer = new Label { Text = "Veles PlayGame  ·  Публичные релизы сборок  ·  GitHub Releases", TextAlign = ContentAlignment.MiddleCenter, Dock = DockStyle.Fill, ForeColor = Muted, Font = new Font("Segoe UI", 8) }; root.Controls.Add(footer, 0, 4); root.SetColumnSpan(footer, 3);
+            _browser.Dock = DockStyle.Fill;
+            _browser.ScriptErrorsSuppressed = true;
+            _browser.AllowWebBrowserDrop = false;
+            _browser.IsWebBrowserContextMenuEnabled = false;
+            _browser.WebBrowserShortcutsEnabled = false;
+            _browser.ObjectForScripting = new LauncherBridge(this);
+            _browser.DocumentCompleted += (s, e) => ApplyNotice(_lastNotice, false);
+            Controls.Add(_browser);
+            var html = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WebUi", "index.html");
+            if (File.Exists(html)) _browser.Navigate(new Uri(html));
+            else _browser.DocumentText = "<html><body style='background:#100e0d;color:white;font-family:Segoe UI;padding:30px'>Web UI не найден. Переустановите Launcher.</body></html>";
         }
 
-        private Control MakeServerCard()
+        private static void EnableIe11Mode()
         {
-            var panel = CardPanel(); var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, Padding = new Padding(22), BackColor = Card, Margin = new Padding(0) }; layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42)); layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28)); layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58)); layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48)); layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); panel.Controls.Add(layout); layout.Controls.Add(SectionHeader("wifi.png", "ПОДКЛЮЧЕНИЕ К СЕРВЕРУ"), 0, 0); layout.Controls.Add(Label("IP АДРЕС СЕРВЕРА", 0, 0, 9, Muted, true), 0, 1); _address = new Label { Text = "—", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 20, FontStyle.Bold), ForeColor = TextColor, AutoEllipsis = true, TextAlign = ContentAlignment.MiddleLeft }; layout.Controls.Add(_address, 0, 2); var copyRow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = Card, Margin = new Padding(0) }; var copy = Button("Копировать", Color.FromArgb(43, 28, 20), TextColor); ApplyIcon(copy, "wifi.png"); copy.Width = 140; copy.Click += (s, e) => { if (_address.Text != "—") { Clipboard.SetText(_address.Text); ShowNotice("IP сервера скопирован.", false); } }; copyRow.Controls.Add(copy); layout.Controls.Add(copyRow, 0, 3); layout.Controls.Add(new Label { Text = "Адрес появится после публикации сборки.", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9), ForeColor = Muted, AutoEllipsis = true, TextAlign = ContentAlignment.TopLeft }, 0, 4); return panel;
+            try
+            {
+                using (var key = Registry.CurrentUser.CreateSubKey("Software\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_BROWSER_EMULATION"))
+                {
+                    if (key != null) key.SetValue(Path.GetFileName(Application.ExecutablePath), 11001, RegistryValueKind.DWord);
+                }
+            }
+            catch { }
         }
 
-        private Control MakeBuildCard()
-        {
-            var panel = CardPanel(); var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, Padding = new Padding(22), BackColor = Card, Margin = new Padding(0) }; layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42)); layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 54)); layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 88)); layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 8)); panel.Controls.Add(layout); layout.Controls.Add(SectionHeader("build.png", "СБОРКА И ОБНОВЛЕНИЕ"), 0, 0);
-            var state = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, BackColor = Card, Margin = new Padding(0, 6, 0, 0) }; state.RowStyles.Add(new RowStyle(SizeType.Percent, 48)); state.RowStyles.Add(new RowStyle(SizeType.Absolute, 48)); state.RowStyles.Add(new RowStyle(SizeType.Absolute, 28)); state.RowStyles.Add(new RowStyle(SizeType.Percent, 52)); var image = LoadUiIcon("build.png", 92); Control stateImage = image == null ? (Control)new Label { Text = "", Dock = DockStyle.Fill } : new PictureBox { Image = image, SizeMode = PictureBoxSizeMode.Zoom, Dock = DockStyle.Fill, Margin = new Padding(0, 2, 0, 2) }; state.Controls.Add(stateImage, 0, 0); _profile = new Label { Text = "Сборка сервера пока не опубликована", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 17, FontStyle.Bold), ForeColor = TextColor, AutoEllipsis = true, TextAlign = ContentAlignment.TopCenter }; state.Controls.Add(_profile, 0, 1); _meta = new Label { Text = "—", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 10), ForeColor = Muted, AutoEllipsis = true, TextAlign = ContentAlignment.TopCenter }; state.Controls.Add(_meta, 0, 2); state.Controls.Add(new Label { Text = "", Dock = DockStyle.Fill }, 0, 3); layout.Controls.Add(state, 0, 1);
-            var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = Card, Margin = new Padding(0), Padding = new Padding(0, 8, 0, 0) }; _update = Button("Проверить и обновить сборку", Color.FromArgb(33, 25, 19), TextColor); ApplyIcon(_update, "update.png"); _update.Width = 270; _update.Click += async (s, e) => await InstallAsync(); buttons.Controls.Add(_update); _launch = Button("Запустить Minecraft", Color.FromArgb(43, 28, 20), TextColor); ApplyIcon(_launch, "play.png"); _launch.Width = 210; _launch.Enabled = false; _launch.Click += async (s, e) => await LaunchAsync(); buttons.Controls.Add(_launch); layout.Controls.Add(buttons, 0, 2);
-            var details = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Padding = new Padding(10, 8, 10, 6), BackColor = Color.FromArgb(25, 28, 33), Margin = new Padding(-22, 0, -22, 0) }; details.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33)); details.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33)); details.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34)); _loader = Detail(details, "МОДЛОАДЕР", 0); _minecraft = Detail(details, "ВЕРСИЯ MINECRAFT", 1); _status = Detail(details, "СТАТУС", 2); layout.Controls.Add(details, 0, 3); _progress = new ProgressBar { Dock = DockStyle.Bottom, Height = 6, Style = ProgressBarStyle.Continuous, Maximum = 100, Visible = false }; layout.Controls.Add(_progress, 0, 4); return panel;
-        }
-
-        private Control SectionHeader(string iconName, string text)
-        {
-            var row = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = Card, Margin = new Padding(0), Padding = new Padding(0, 2, 0, 0) }; var icon = LoadUiIcon(iconName, 22); if (icon != null) row.Controls.Add(new PictureBox { Image = icon, Size = new Size(22, 22), SizeMode = PictureBoxSizeMode.Zoom, Margin = new Padding(0, 1, 8, 0) }); row.Controls.Add(new Label { Text = text, AutoSize = true, ForeColor = TextColor, Font = new Font("Segoe UI", 15, FontStyle.Bold), Margin = new Padding(0, 1, 0, 0) }); return row;
-        }
-        private void ApplyIcon(Button button, string iconName) { var icon = LoadUiIcon(iconName, 18); if (icon == null) return; button.Image = icon; button.ImageAlign = ContentAlignment.MiddleLeft; button.TextImageRelation = TextImageRelation.ImageBeforeText; button.Padding = new Padding(8, 0, 6, 0); }
-        private Image LoadUiIcon(string iconName, int size)
-        {
-            try { var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "ui-icons", iconName); if (!File.Exists(path)) return null; using (var stream = File.OpenRead(path)) using (var source = new Bitmap(stream)) return new Bitmap(source, new Size(size, size)); } catch { return null; }
-        }
-        private Label Detail(TableLayoutPanel panel, string caption, int column) { var label = new Label { Text = caption + "\n—", Dock = DockStyle.Fill, Padding = new Padding(8, 4, 8, 4), ForeColor = TextColor, Font = new Font("Segoe UI", 10, FontStyle.Bold), AutoEllipsis = true, TextAlign = ContentAlignment.MiddleLeft }; panel.Controls.Add(label, column, 0); return label; }
-        private Panel CardPanel() { return new Panel { Dock = DockStyle.Fill, BackColor = Card, Margin = new Padding(6, 4, 6, 4), BorderStyle = BorderStyle.FixedSingle, Padding = new Padding(1) }; }
-        private Label Label(string text, int x, int y, float size, Color color, bool bold) { return new Label { Text = text, AutoSize = true, Location = new Point(x, y), Font = new Font("Segoe UI", size, bold ? FontStyle.Bold : FontStyle.Regular), ForeColor = color }; }
-        private Button Button(string text, Color back, Color fore) { return new Button { Text = text, AutoSize = true, Height = 32, FlatStyle = FlatStyle.Flat, BackColor = back, ForeColor = fore, FlatAppearance = { BorderColor = Color.FromArgb(90, 55, 34) }, Font = new Font("Segoe UI", 9, FontStyle.Bold) }; }
-        private void SetBusy(bool value) { _update.Enabled = !value; _settingsButton.Enabled = !value; _launch.Enabled = !value && _latest != null && !_builds.NeedsUpdate(_latest); _progress.Visible = value; if (value) _progress.Value = 0; }
         private async Task RefreshAsync()
         {
             try
             {
-                _status.Text = "СТАТУС\nПроверка…"; _latest = await _builds.GetLatestAsync(CancellationToken.None); var info = _latest.Info; var installed = _builds.ReadInstalled(); var needs = _builds.NeedsUpdate(_latest);
-                var buildName = string.IsNullOrWhiteSpace(info.BuildName) ? "Серверная сборка" : info.BuildName.Trim(); Text = "Veles Launcher · " + buildName; _title.Text = buildName; _version.Text = "v" + info.BuildVersion; _address.Text = info.ServerAddress; _profile.Text = buildName; _meta.Text = string.Format("Minecraft {0} · {1} {2}", info.MinecraftVersion, info.ModLoader, info.ModLoaderVersion); _loader.Text = "МОДЛОАДЕР\n" + info.ModLoader + " " + info.ModLoaderVersion; _minecraft.Text = "ВЕРСИЯ MINECRAFT\n" + info.MinecraftVersion; _status.Text = "СТАТУС\n" + (needs ? "Нужно обновить" : "Готово v" + installed.Version); _launch.Enabled = !needs;
-                _update.Text = needs ? "Обновить сборку сервера" : "Проверить обновления"; if (needs) ShowNotice("Доступна новая сборка. Вход на сервер заблокирован до обновления.", false); else ShowNotice("Сборка актуальна. Можно запускать игру.", true);
+                _latest = await _builds.GetLatestAsync(CancellationToken.None);
+                var info = _latest.Info;
+                var installed = _builds.ReadInstalled();
+                var needs = _builds.NeedsUpdate(_latest);
+                var buildName = string.IsNullOrWhiteSpace(info.BuildName) ? "Серверная сборка" : info.BuildName.Trim();
+                var state = "{\"buildName\":" + Json(buildName) + ",\"version\":" + Json(info.BuildVersion) + ",\"address\":" + Json(info.ServerAddress) + ",\"minecraft\":" + Json(info.MinecraftVersion) + ",\"loader\":" + Json(info.ModLoader) + ",\"loaderVersion\":" + Json(info.ModLoaderVersion) + ",\"status\":" + Json(needs ? "Нужно обновить" : "Готово v" + (installed == null ? info.BuildVersion : installed.Version)) + ",\"installed\":" + ((!needs).ToString().ToLowerInvariant()) + ",\"needsUpdate\":" + needs.ToString().ToLowerInvariant() + "}";
+                ApplyState(state);
+                ApplyNotice(needs ? "Доступна новая сборка. Вход на сервер заблокирован до обновления." : "Сборка актуальна. Можно запускать игру.", needs ? false : true);
             }
-            catch (Exception error) { _latest = null; Text = "Veles Launcher"; _version.Text = "v—"; _address.Text = "—"; _profile.Text = "Сборка сервера пока не опубликована"; _meta.Text = "—"; _loader.Text = "МОДЛОАДЕР\n—"; _minecraft.Text = "ВЕРСИЯ MINECRAFT\n—"; _status.Text = "СТАТУС\nНет сборки"; _launch.Enabled = false; _update.Enabled = true; ShowNotice(GetFriendlyError(error), false); }
+            catch (Exception error)
+            {
+                _latest = null;
+                ApplyState("{\"buildName\":\"Серверная сборка\",\"version\":\"—\",\"address\":\"—\",\"minecraft\":\"—\",\"loader\":\"—\",\"loaderVersion\":\"\",\"status\":\"Нет сборки\",\"installed\":false,\"needsUpdate\":true}");
+                ApplyNotice(GetFriendlyError(error), false);
+            }
         }
-        private async Task InstallAsync()
+
+        internal async Task InstallAsync()
         {
-            try { ShowNotice("Проверяю последний релиз сборки…", false); SetBusy(true); _status.Text = "СТАТУС\nСкачивание…"; var latest = _latest ?? await _builds.GetLatestAsync(CancellationToken.None); var progress = new Progress<int>(value => _progress.Value = Math.Max(0, Math.Min(100, value))); await _builds.InstallAsync(latest, progress, CancellationToken.None); ShowNotice("Сборка установлена, сервер добавлен в список Minecraft.", true); await RefreshAsync(); }
-            catch (Exception error) { ShowNotice(GetFriendlyError(error), false); } finally { SetBusy(false); }
+            if (_busy) return;
+            _busy = true;
+            try
+            {
+                ApplyNotice("Проверяю последний релиз сборки…", false);
+                ApplyUiText("status-value", "Скачивание…");
+                var latest = _latest ?? await _builds.GetLatestAsync(CancellationToken.None);
+                await _builds.InstallAsync(latest, null, CancellationToken.None);
+                await RefreshAsync();
+                ApplyNotice("Сборка установлена, сервер добавлен в список Minecraft.", true);
+            }
+            catch (Exception error)
+            {
+                ApplyNotice(GetFriendlyError(error), false);
+                ApplyUiText("status-value", "Ошибка");
+            }
+            finally
+            {
+                _busy = false;
+                ApplyUiText("update-button", _latest == null ? "Проверить и обновить сборку" : (_builds.NeedsUpdate(_latest) ? "Обновить сборку сервера" : "Проверить обновления"));
+            }
         }
-        private async Task LaunchAsync()
+
+        internal async Task LaunchAsync()
         {
             try
             {
-                var latest = _latest ?? await _builds.GetLatestAsync(CancellationToken.None); if (_builds.NeedsUpdate(latest)) { ShowNotice("Сначала обновите сборку: запуск заблокирован.", false); return; }
-                var profileName = string.IsNullOrWhiteSpace(latest.Info.ModLoaderProfile) ? "launch.json" : latest.Info.ModLoaderProfile; var profilePath = SafeInstancePath(profileName); var profile = LaunchProfile.Load(profilePath);
-                var java = JavaRuntimeService.ResolveJavaExecutable(_builds.InstanceDirectory, latest.Info); JavaRuntimeService.VerifySha256(java, latest.Info.JavaRuntimeSha256);
-                var classPath = ReplaceTokens(profile.ClassPath); var jvm = ReplaceTokens(profile.JvmArguments); if (string.IsNullOrWhiteSpace(jvm)) jvm = "-Xms" + (string.IsNullOrWhiteSpace(latest.Info.MemoryMin) ? "2G" : latest.Info.MemoryMin) + " -Xmx" + (string.IsNullOrWhiteSpace(latest.Info.MemoryMax) ? "6G" : latest.Info.MemoryMax);
-                var game = ReplaceTokens(profile.GameArguments); var arguments = jvm + " -cp " + Quote(classPath) + " " + profile.MainClass + (string.IsNullOrWhiteSpace(game) ? string.Empty : " " + game);
-                Process.Start(new ProcessStartInfo { FileName = java, Arguments = arguments, WorkingDirectory = _builds.InstanceDirectory, UseShellExecute = false }); _status.Text = "СТАТУС\nИгра запущена";
+                var latest = _latest ?? await _builds.GetLatestAsync(CancellationToken.None);
+                if (_builds.NeedsUpdate(latest)) { ApplyNotice("Сначала обновите сборку: запуск заблокирован.", false); return; }
+                var profileName = string.IsNullOrWhiteSpace(latest.Info.ModLoaderProfile) ? "launch.json" : latest.Info.ModLoaderProfile;
+                var profilePath = SafeInstancePath(profileName);
+                var profile = LaunchProfile.Load(profilePath);
+                var java = JavaRuntimeService.ResolveJavaExecutable(_builds.InstanceDirectory, latest.Info);
+                JavaRuntimeService.VerifySha256(java, latest.Info.JavaRuntimeSha256);
+                var classPath = ReplaceTokens(profile.ClassPath);
+                var jvm = ReplaceTokens(profile.JvmArguments);
+                if (string.IsNullOrWhiteSpace(jvm)) jvm = "-Xms" + (string.IsNullOrWhiteSpace(latest.Info.MemoryMin) ? "2G" : latest.Info.MemoryMin) + " -Xmx" + (string.IsNullOrWhiteSpace(latest.Info.MemoryMax) ? "6G" : latest.Info.MemoryMax);
+                var game = ReplaceTokens(profile.GameArguments);
+                var arguments = jvm + " -cp " + Quote(classPath) + " " + profile.MainClass + (string.IsNullOrWhiteSpace(game) ? string.Empty : " " + game);
+                Process.Start(new ProcessStartInfo { FileName = java, Arguments = arguments, WorkingDirectory = _builds.InstanceDirectory, UseShellExecute = false });
+                ApplyUiText("status-value", "Игра запущена");
+                ApplyNotice("Minecraft запущен.", true);
             }
-            catch (Exception error) { ShowNotice(GetFriendlyError(error), false); }
-            await Task.CompletedTask;
+            catch (Exception error) { ApplyNotice(GetFriendlyError(error), false); }
         }
-        private string ReplaceTokens(string value) { return (value ?? string.Empty).Replace("${INSTANCE}", _builds.InstanceDirectory).Replace("/", "\\"); }
-        private string SafeInstancePath(string relative) { var root = Path.GetFullPath(_builds.InstanceDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar; var full = Path.GetFullPath(Path.Combine(_builds.InstanceDirectory, relative)); if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Профиль запуска выходит за пределы сборки."); return full; }
-        private static string Quote(string value) { return "\"" + (value ?? string.Empty).Replace("\"", "\\\"") + "\""; }
-        private string GetFriendlyError(Exception error) { var message = error == null ? string.Empty : error.Message; if (message.IndexOf("404", StringComparison.OrdinalIgnoreCase) >= 0 || message.IndexOf("пустой релиз", StringComparison.OrdinalIgnoreCase) >= 0 || message.IndexOf("Последний релиз", StringComparison.OrdinalIgnoreCase) >= 0) return "Сборка сервера пока не опубликована."; if (message.IndexOf("build-info.txt", StringComparison.OrdinalIgnoreCase) >= 0) return "Релиз сборки заполнен неправильно. Обратитесь к администратору сервера."; if (message.IndexOf("SHA-256", StringComparison.OrdinalIgnoreCase) >= 0) return "Архив сборки повреждён или не прошёл проверку целостности."; return "Не удалось проверить сборку. Проверьте подключение к интернету."; }
-        private void ShowNotice(string text, bool success) { if (_notice == null) return; _notice.Text = text; _notice.ForeColor = success ? Color.LightGreen : Color.FromArgb(255, 190, 150); _notice.Visible = true; }
+
+        internal void OpenSettings()
+        {
+            using (var dialog = new SettingsForm(_builds.Settings))
+            {
+                if (dialog.ShowDialog(this) == DialogResult.OK) { _builds.SaveSettings(dialog.Value); ApplyNotice("Настройки сохранены.", true); }
+            }
+        }
+
+        internal void OpenSite() { Process.Start(new ProcessStartInfo("https://veles-saite.vercel.app/") { UseShellExecute = true }); }
+        internal void CopyAddress()
+        {
+            if (_latest == null || string.IsNullOrWhiteSpace(_latest.Info.ServerAddress)) { ApplyNotice("Адрес появится после публикации сборки.", false); return; }
+            Clipboard.SetText(_latest.Info.ServerAddress);
+            ApplyNotice("IP сервера скопирован.", true);
+        }
+
         private async Task CheckLauncherUpdateAsync(bool askUser)
         {
             try
             {
-                var github = new GitHubClient("kutsandriy14-cyber", "veles-launcher"); var release = await github.GetLatestReleaseAsync(CancellationToken.None); Version latestVersion; if (!Version.TryParse((release.TagName ?? "0").TrimStart('v', 'V'), out latestVersion) || latestVersion <= ProductInfo.Version) { if (askUser) ShowNotice("Veles Launcher уже обновлён до последней версии.", true); return; }
-                var asset = release.Assets == null ? null : release.Assets.Find(x => string.Equals(x.Name, "VelesLauncherSetup.exe", StringComparison.OrdinalIgnoreCase)); if (asset == null) { if (askUser) ShowNotice("Новая версия найдена, но установщик пока недоступен.", false); return; }
-                var answer = MessageBox.Show(this, "Доступна новая версия Veles Launcher v" + latestVersion + ". Обновить приложение сейчас?", "Обновление лаунчера", MessageBoxButtons.YesNo, MessageBoxIcon.Information); if (answer != DialogResult.Yes) return;
-                var updater = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Veles.Updater.exe"); if (!File.Exists(updater)) { ShowNotice("Служебный обновлятор не найден рядом с Launcher.", false); return; }
-                Process.Start(new ProcessStartInfo { FileName = updater, Arguments = "--auto --wait-pid " + Process.GetCurrentProcess().Id, WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory, UseShellExecute = true }); Application.Exit();
+                var github = new GitHubClient("kutsandriy14-cyber", "veles-launcher");
+                var release = await github.GetLatestReleaseAsync(CancellationToken.None);
+                Version latestVersion;
+                if (!Version.TryParse((release.TagName ?? "0").TrimStart('v', 'V'), out latestVersion) || latestVersion <= ProductInfo.Version) return;
+                var asset = release.Assets == null ? null : release.Assets.Find(x => string.Equals(x.Name, "VelesLauncherSetup.exe", StringComparison.OrdinalIgnoreCase));
+                if (asset == null) return;
+                var answer = MessageBox.Show(this, "Доступна новая версия Veles Launcher v" + latestVersion + ". Обновить приложение сейчас?", "Обновление лаунчера", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                if (answer != DialogResult.Yes) return;
+                var updater = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Veles.Updater.exe");
+                if (!File.Exists(updater)) { ApplyNotice("Служебный обновлятор не найден рядом с Launcher.", false); return; }
+                Process.Start(new ProcessStartInfo { FileName = updater, Arguments = "--auto --wait-pid " + Process.GetCurrentProcess().Id, WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory, UseShellExecute = true });
+                Application.Exit();
             }
-            catch { if (askUser) ShowNotice("Не удалось проверить обновление Launcher. Можно попробовать позже.", false); }
+            catch { if (askUser) ApplyNotice("Не удалось проверить обновление Launcher.", false); }
         }
-        private void ShowSettings()
+
+        private void ApplyState(string stateJson)
         {
-            using (var dialog = new SettingsForm(_builds.Settings, _builds.InstanceDirectory))
-            {
-                if (dialog.ShowDialog(this) == DialogResult.OK) { _builds.SaveSettings(dialog.Value); ShowNotice("Настройки сохранены. Путь экземпляра: " + _builds.InstanceDirectory, true); }
-            }
+            if (_browser.Document == null) return;
+            try { _browser.Document.InvokeScript("eval", new object[] { "window.velesSetState(" + stateJson + ");" }); } catch { }
         }
-        private static void OpenUrl(string url) { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
+        private void ApplyUiText(string id, string value)
+        {
+            if (_browser.Document == null) return;
+            try { _browser.Document.InvokeScript("eval", new object[] { "(function(){var e=document.getElementById(" + Json(id) + ");if(e)e.textContent=" + Json(value) + ";})();" }); } catch { }
+        }
+        private void ApplyNotice(string text, bool success)
+        {
+            _lastNotice = text;
+            if (_browser.Document == null) return;
+            try { _browser.Document.InvokeScript("eval", new object[] { "(function(){var e=document.getElementById('notice');if(e){e.textContent=" + Json(text) + ";e.style.color=" + Json(success ? "#9fe3ad" : "#e3a982") + ";}})();" }); } catch { }
+        }
+        private string ReplaceTokens(string value) { return (value ?? string.Empty).Replace("${INSTANCE}", _builds.InstanceDirectory).Replace("/", "\\"); }
+        private string SafeInstancePath(string relative) { var root = Path.GetFullPath(_builds.InstanceDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar; var full = Path.GetFullPath(Path.Combine(_builds.InstanceDirectory, relative)); if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Профиль запуска выходит за пределы сборки."); return full; }
+        private static string Quote(string value) { return "\"" + (value ?? string.Empty).Replace("\"", "\\\"") + "\""; }
+        private static string Json(string value) { return "\"" + (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "\\r").Replace("\n", "\\n") + "\""; }
+        private string GetFriendlyError(Exception error) { var message = error == null ? string.Empty : error.Message; if (message.IndexOf("404", StringComparison.OrdinalIgnoreCase) >= 0 || message.IndexOf("пустой релиз", StringComparison.OrdinalIgnoreCase) >= 0 || message.IndexOf("Последний релиз", StringComparison.OrdinalIgnoreCase) >= 0) return "Сборка сервера пока не опубликована."; if (message.IndexOf("build-info.txt", StringComparison.OrdinalIgnoreCase) >= 0) return "Релиз сборки заполнен неправильно. Обратитесь к администратору сервера."; if (message.IndexOf("SHA-256", StringComparison.OrdinalIgnoreCase) >= 0) return "Архив сборки повреждён или не прошёл проверку целостности."; return "Не удалось проверить сборку. Проверьте подключение к интернету."; }
+    }
+
+    [System.Runtime.InteropServices.ComVisible(true)]
+    public sealed class LauncherBridge
+    {
+        private readonly LauncherForm _form;
+        public LauncherBridge(LauncherForm form) { _form = form; }
+        public void Notify(string action)
+        {
+            if (action == "build.update") _form.BeginInvoke(new Action(async () => await _form.InstallAsync()));
+            else if (action == "game.launch") _form.BeginInvoke(new Action(async () => await _form.LaunchAsync()));
+            else if (action == "settings.open") _form.BeginInvoke(new Action(_form.OpenSettings));
+            else if (action == "site.open") _form.BeginInvoke(new Action(_form.OpenSite));
+            else if (action == "server.copy") _form.BeginInvoke(new Action(_form.CopyAddress));
+        }
     }
 
     internal sealed class SettingsForm : Form
     {
-        private readonly TextBox _path; private readonly NumericUpDown _minimum; private readonly NumericUpDown _maximum; private readonly Label _javaStatus; public LauncherSettings Value { get; private set; }
-        public SettingsForm(LauncherSettings current, string instancePath)
+        private readonly TextBox _path;
+        private readonly NumericUpDown _minimum;
+        private readonly NumericUpDown _maximum;
+        public LauncherSettings Value { get; private set; }
+        public SettingsForm(LauncherSettings current)
         {
             Value = new LauncherSettings { InstanceDirectory = current.InstanceDirectory, MinimumMemoryMb = current.MinimumMemoryMb, MaximumMemoryMb = current.MaximumMemoryMb };
-            Text = "Настройки Veles Launcher"; Width = 720; Height = 430; MinimumSize = new Size(720, 430); MaximumSize = new Size(720, 430); BackColor = Color.FromArgb(12, 10, 9); ForeColor = Color.FromArgb(250, 250, 249); StartPosition = FormStartPosition.CenterParent; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false; MinimizeBox = false; AutoScaleMode = AutoScaleMode.Dpi;
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(26), ColumnCount = 1, RowCount = 7, BackColor = BackColor }; root.RowStyles.Add(new RowStyle(SizeType.Absolute, 44)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 74)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 58)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 58)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 42)); root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 46)); Controls.Add(root);
+            Text = "Настройки Veles Launcher"; Width = 720; Height = 320; MinimumSize = new Size(720, 320); MaximumSize = new Size(720, 320); BackColor = Color.FromArgb(12, 10, 9); ForeColor = Color.White; StartPosition = FormStartPosition.CenterParent; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false; MinimizeBox = false;
+            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(26), ColumnCount = 1, RowCount = 5, BackColor = BackColor }; root.RowStyles.Add(new RowStyle(SizeType.Absolute, 40)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 62)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 52)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 52)); root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); Controls.Add(root);
             root.Controls.Add(new Label { Text = "НАСТРОЙКИ ИГРЫ", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 17, FontStyle.Bold), ForeColor = Color.FromArgb(249, 115, 22), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
-            var pathRow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, BackColor = Color.FromArgb(28, 25, 23), Padding = new Padding(12, 10, 12, 10), Margin = new Padding(0) }; pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190)); pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 126)); pathRow.Controls.Add(new Label { Text = "Папка экземпляра", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(168, 162, 158), TextAlign = ContentAlignment.MiddleLeft }, 0, 0); _path = new TextBox { Text = Value.InstanceDirectory, Dock = DockStyle.Fill, BackColor = Color.FromArgb(38, 35, 33), ForeColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Margin = new Padding(4, 5, 8, 5) }; pathRow.Controls.Add(_path, 1, 0); var browse = new Button { Text = "Выбрать папку", Dock = DockStyle.Fill, BackColor = Color.FromArgb(249, 115, 22), ForeColor = Color.Black, FlatStyle = FlatStyle.Flat, Margin = new Padding(0, 4, 0, 4) }; browse.Click += (s, e) => { using (var dialog = new FolderBrowserDialog { SelectedPath = _path.Text }) if (dialog.ShowDialog(this) == DialogResult.OK) _path.Text = dialog.SelectedPath; }; pathRow.Controls.Add(browse, 2, 0); root.Controls.Add(pathRow, 0, 1);
+            var pathRow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, BackColor = Color.FromArgb(28, 25, 23), Padding = new Padding(10), Margin = new Padding(0) }; pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 165)); pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 116)); pathRow.Controls.Add(new Label { Text = "Папка экземпляра", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(168, 162, 158), TextAlign = ContentAlignment.MiddleLeft }, 0, 0); _path = new TextBox { Text = Value.InstanceDirectory, Dock = DockStyle.Fill, BackColor = Color.FromArgb(38, 35, 33), ForeColor = Color.White, Margin = new Padding(4, 5, 8, 5) }; pathRow.Controls.Add(_path, 1, 0); var browse = new Button { Text = "Выбрать папку", Dock = DockStyle.Fill, BackColor = Color.FromArgb(249, 115, 22), ForeColor = Color.Black, FlatStyle = FlatStyle.Flat }; browse.Click += (s, e) => { using (var dialog = new FolderBrowserDialog { SelectedPath = _path.Text }) if (dialog.ShowDialog(this) == DialogResult.OK) _path.Text = dialog.SelectedPath; }; pathRow.Controls.Add(browse, 2, 0); root.Controls.Add(pathRow, 0, 1);
             root.Controls.Add(Field("Минимальная память (МБ)", _minimum = MemoryBox(Value.MinimumMemoryMb)), 0, 2); root.Controls.Add(Field("Максимальная память (МБ)", _maximum = MemoryBox(Value.MaximumMemoryMb)), 0, 3);
-            _javaStatus = new Label { Text = "Java: встроенный runtime будет проверен внутри установленной сборки", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(249, 115, 22), TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true }; root.Controls.Add(_javaStatus, 0, 4);
-            root.Controls.Add(new Label { Text = "Java устанавливается автоматически вместе с корректным релизом сборки. Ручная установка не требуется.", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(168, 162, 158), AutoEllipsis = true, TextAlign = ContentAlignment.TopLeft }, 0, 5);
-            var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 5, 0, 0) }; var save = new Button { Text = "Сохранить", Width = 120, Height = 34, BackColor = Color.FromArgb(249, 115, 22), ForeColor = Color.Black, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9, FontStyle.Bold) }; var cancel = new Button { Text = "Отмена", Width = 100, Height = 34, DialogResult = DialogResult.Cancel, BackColor = Color.FromArgb(43, 28, 20), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) }; save.Click += (s, e) => Save(); buttons.Controls.Add(save); buttons.Controls.Add(cancel); root.Controls.Add(buttons, 0, 6); AcceptButton = save; CancelButton = cancel;
+            var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 8, 0, 0) }; var save = new Button { Text = "Сохранить", Width = 120, Height = 34, BackColor = Color.FromArgb(249, 115, 22), ForeColor = Color.Black, FlatStyle = FlatStyle.Flat }; var cancel = new Button { Text = "Отмена", Width = 100, Height = 34, DialogResult = DialogResult.Cancel, BackColor = Color.FromArgb(43, 28, 20), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Margin = new Padding(0, 0, 10, 0) }; save.Click += (s, e) => Save(); buttons.Controls.Add(save); buttons.Controls.Add(cancel); root.Controls.Add(buttons, 0, 4); AcceptButton = save; CancelButton = cancel;
         }
-        private Control Field(string caption, Control control) { var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.FromArgb(28, 25, 23), Padding = new Padding(12, 8, 12, 8), Margin = new Padding(0) }; row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190)); row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); row.Controls.Add(new Label { Text = caption, Dock = DockStyle.Fill, ForeColor = Color.FromArgb(168, 162, 158), TextAlign = ContentAlignment.MiddleLeft }, 0, 0); control.Dock = DockStyle.Fill; control.Margin = new Padding(4, 3, 0, 3); row.Controls.Add(control, 1, 0); return row; }
+        private Control Field(string caption, Control control) { var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, BackColor = Color.FromArgb(28, 25, 23), Padding = new Padding(10, 7, 10, 7), Margin = new Padding(0) }; row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 225)); row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); row.Controls.Add(new Label { Text = caption, Dock = DockStyle.Fill, ForeColor = Color.FromArgb(168, 162, 158), TextAlign = ContentAlignment.MiddleLeft }, 0, 0); control.Dock = DockStyle.Fill; row.Controls.Add(control, 1, 0); return row; }
         private NumericUpDown MemoryBox(int value) { return new NumericUpDown { Minimum = 1024, Maximum = 65536, Increment = 512, Value = Math.Max(1024, Math.Min(65536, value)), Dock = DockStyle.Fill, BackColor = Color.FromArgb(28, 25, 23), ForeColor = Color.White, ThousandsSeparator = true }; }
         private void Save() { if (string.IsNullOrWhiteSpace(_path.Text)) { MessageBox.Show(this, "Укажите папку экземпляра.", "Настройки", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; } if (_maximum.Value < _minimum.Value) { MessageBox.Show(this, "Максимальная память должна быть не меньше минимальной.", "Настройки", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; } Value.InstanceDirectory = _path.Text.Trim(); Value.MinimumMemoryMb = (int)_minimum.Value; Value.MaximumMemoryMb = (int)_maximum.Value; DialogResult = DialogResult.OK; Close(); }
     }

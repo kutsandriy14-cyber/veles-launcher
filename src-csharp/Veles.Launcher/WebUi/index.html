@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veles PlayGame</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">V</span><span class="brand-name">VELES PLAYGAME <b>/</b> SERVER LAUNCHER</span></div>
+      <nav class="top-actions"><button class="ghost-button" id="settings-button">Настройки</button><button class="ghost-button" id="site-button">Сайт сервера</button></nav>
+    </header>
+    <section class="hero">
+      <div class="hero-icon" aria-hidden="true"><svg viewBox="0 0 96 96"><path d="M18 31 48 16l30 15-30 15-30-15Z"/><path d="M18 31v34l30 15V46L18 31Z"/><path d="M78 31v34L48 80V46l30-15Z"/><path d="M48 16v30"/><path class="dark-line" d="m31 37 30-15"/></svg></div>
+      <div class="hero-copy"><h1 id="build-title">Серверная сборка</h1><p>СЕРВЕРНАЯ СБОРКА <span>•</span> ОНЛАЙН <span>·</span> ВЫЖИВАНИЕ / КВЕСТЫ</p></div>
+      <div class="hero-version" id="build-version">v—</div>
+    </section>
+    <section class="content-grid">
+      <article class="server-card panel">
+        <div class="panel-heading"><span class="wifi-icon" aria-hidden="true"><i></i><i></i><i></i><b></b></span><h2>ПОДКЛЮЧЕНИЕ К СЕРВЕРУ</h2></div>
+        <div class="field-label">IP АДРЕС СЕРВЕРА</div><div class="server-address" id="server-address">—</div>
+        <button class="secondary-button" id="copy-button">Копировать</button>
+        <p class="panel-hint">Адрес появится после публикации сборки.</p>
+      </article>
+      <article class="build-card panel">
+        <div class="panel-heading"><span class="mini-box" aria-hidden="true"></span><h2>СБОРКА И ОБНОВЛЕНИЕ</h2></div>
+        <div class="empty-state"><div class="empty-illustration" aria-hidden="true"><svg viewBox="0 0 160 130"><path d="M18 42 80 14l62 28-62 29-62-29Z"/><path d="M18 42v54l62 29V71L18 42Z"/><path d="M142 42v54l-62 29V71l62-29Z"/><path d="M80 14v57"/><path class="dark-line" d="m45 54 62-29"/><circle cx="112" cy="91" r="15"/></svg></div><h3 id="build-state">Сборка сервера пока не опубликована</h3><p id="build-meta">—</p></div>
+        <div class="build-actions"><button class="primary-button" id="update-button">Проверить и обновить сборку</button><button class="secondary-button disabled" id="launch-button" disabled>Запустить Minecraft</button></div>
+        <div class="details-strip"><div><span>МОДЛОАДЕР</span><b id="loader-value">—</b></div><div><span>ВЕРСИЯ MINECRAFT</span><b id="minecraft-value">—</b></div><div><span>СТАТУС</span><b id="status-value">Нет сборки</b></div></div>
+      </article>
+    </section>
+    <div class="notice" id="notice">Сборка сервера пока не опубликована.</div>
+    <footer>Veles PlayGame <span>·</span> Публичные релизы сборок <span>·</span> GitHub Releases</footer>
+  </main>
+  <script src="main.js"></script>
+</body>
+</html>
