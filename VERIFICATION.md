@@ -13,12 +13,12 @@
 | Репозиторий сборок | Клиент читает только последний публичный GitHub Release из `veles-modpack-releases`. |
 | Админ-панель | Отдельный C# EXE формирует `build-info.txt`, считает SHA-256, создаёт release и загружает `build.zip` и TXT. Токен не сохраняется. |
 | Updater | Отдельный C# EXE ищет `VelesLauncherSetup.exe` в последнем релизе `veles-launcher`. |
-| Setup | Inno Setup успешно создал три установщика с разными AppId, каталогами и ярлыками. Основной VelesLauncherSetup дополнительно кладёт отдельный `Veles.Updater.exe` рядом с Launcher; каждый setup проверяет .NET Framework 4.8. |
+| Setup | Inno Setup успешно создал два распространяемых установщика с разными AppId, каталогами и ярлыками. Основной VelesLauncherSetup кладёт отдельный `Veles.Updater.exe` рядом с Launcher; оба setup проверяют .NET Framework 4.8. |
 | Публичные репозитории | Оба репозитория публичные, ветка `main`, без незакоммиченных изменений. |
 
 ## Артефакты
 
-`VelesLauncherSetup.exe`, `VelesBuildPublisherSetup.exe` и `VelesLauncherUpdaterSetup.exe` опубликованы в [релизе v0.1.4](https://github.com/kutsandriy14-cyber/veles-launcher/releases/tag/v0.1.4). В основном `VelesLauncherSetup.exe` Updater устанавливается рядом с `Veles.Launcher.exe`.
+`VelesLauncherSetup.exe` и `VelesBuildPublisherSetup.exe` опубликованы в [релизе v0.1.5](https://github.com/kutsandriy14-cyber/veles-launcher/releases/tag/v0.1.5). Отдельного `VelesLauncherUpdaterSetup.exe` в релизе нет; Updater устанавливается только внутри основного `VelesLauncherSetup.exe` рядом с `Veles.Launcher.exe`.
 
 ## Ручная проверка, которая понадобится после получения настоящей сборки
 

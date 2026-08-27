@@ -50,13 +50,12 @@ jobs:
       - name: Install Inno Setup
         shell: powershell
         run: choco install innosetup --no-progress -y
-      - name: Build separate setup installers
+      - name: Build launcher and admin setup installers
         shell: powershell
         run: |
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           & $iscc installer\VelesLauncher.iss
           & $iscc installer\VelesBuildPublisher.iss
-          & $iscc installer\VelesLauncherUpdater.iss
       - name: Upload application binaries and setup files
         uses: actions/upload-artifact@v4
         with:
@@ -64,5 +63,4 @@ jobs:
           path: |
             src-csharp/Veles.Launcher/bin/Release/**
             src-csharp/Veles.BuildPublisher/bin/Release/**
-            src-csharp/Veles.Updater/bin/Release/**
             artifacts/setup/*.exe
