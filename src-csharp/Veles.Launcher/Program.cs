@@ -6,7 +6,8 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Microsoft.Win32;
+using CefSharp;
+using CefSharp.WinForms;
 using Veles.Core;
 
 namespace Veles.Launcher
@@ -19,14 +20,18 @@ namespace Veles.Launcher
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            Cef.EnableHighDPISupport();
+            var cefSettings = new CefSettings { CachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Veles", "cef-cache") };
+            if (!Cef.Initialize(cefSettings, true, null)) return;
             Application.Run(new LauncherForm());
+            Cef.Shutdown();
         }
     }
 
     public sealed class LauncherForm : Form
     {
         private readonly BuildService _builds = new BuildService();
-        private readonly WebBrowser _browser = new WebBrowser();
+        private ChromiumWebBrowser _browser;
         private BuildSnapshot _latest;
         private bool _busy;
         private string _lastNotice = "Сборка сервера пока не опубликована.";
@@ -40,45 +45,19 @@ namespace Veles.Launcher
             BackColor = Color.FromArgb(13, 11, 10);
             StartPosition = FormStartPosition.CenterScreen;
             AutoScaleMode = AutoScaleMode.Dpi;
-            EnableIe11Mode();
             BuildUi();
             Shown += async (s, e) => { await RefreshAsync(); await CheckLauncherUpdateAsync(false); };
         }
 
         private void BuildUi()
         {
-            _browser.Dock = DockStyle.Fill;
-            _browser.ScriptErrorsSuppressed = true;
-            _browser.AllowWebBrowserDrop = false;
-            _browser.IsWebBrowserContextMenuEnabled = false;
-            _browser.WebBrowserShortcutsEnabled = false;
-            _browser.ObjectForScripting = new LauncherBridge(this);
-            _browser.DocumentCompleted += (s, e) => ApplyNotice(_lastNotice, false);
+            _browser = new ChromiumWebBrowser("about:blank") { Dock = DockStyle.Fill };
+            _browser.JavascriptObjectRepository.Settings.LegacyBindingEnabled = true;
+            _browser.JavascriptObjectRepository.Register("velesBridge", new LauncherBridge(this), false, new BindingOptions());
             Controls.Add(_browser);
             var html = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WebUi", "index.html");
-            if (File.Exists(html))
-            {
-                var directory = Path.GetDirectoryName(html);
-                var source = File.ReadAllText(html);
-                var css = File.Exists(Path.Combine(directory, "styles.css")) ? File.ReadAllText(Path.Combine(directory, "styles.css")) : string.Empty;
-                var js = File.Exists(Path.Combine(directory, "main.js")) ? File.ReadAllText(Path.Combine(directory, "main.js")) : string.Empty;
-                source = source.Replace("<link rel=\"stylesheet\" href=\"styles.css\">", "<style>" + css + "</style>");
-                source = source.Replace("<script src=\"main.js\"></script>", "<script>" + js + "</script>");
-                _browser.DocumentText = source;
-            }
-            else _browser.DocumentText = "<html><body style='background:#100e0d;color:white;font-family:Segoe UI;padding:30px'>Web UI не найден. Переустановите Launcher.</body></html>";
-        }
-
-        private static void EnableIe11Mode()
-        {
-            try
-            {
-                using (var key = Registry.CurrentUser.CreateSubKey("Software\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_BROWSER_EMULATION"))
-                {
-                    if (key != null) key.SetValue(Path.GetFileName(Application.ExecutablePath), 11001, RegistryValueKind.DWord);
-                }
-            }
-            catch { }
+            if (File.Exists(html)) _browser.Load(new Uri(html).AbsoluteUri);
+            else _browser.LoadHtml("<html><body style='background:#100e0d;color:white;font-family:Segoe UI;padding:30px'>Web UI не найден. Переустановите Launcher.</body></html>", "http://veles.local/");
         }
 
         private async Task RefreshAsync()
@@ -188,19 +167,19 @@ namespace Veles.Launcher
 
         private void ApplyState(string stateJson)
         {
-            if (_browser.Document == null) return;
-            try { _browser.Document.InvokeScript("eval", new object[] { "window.velesSetState(" + stateJson + ");" }); } catch { }
+            if (_browser == null || !_browser.IsBrowserInitialized) return;
+            try { _browser.GetMainFrame().ExecuteJavaScript("window.velesSetState(" + stateJson + ");", "veles://state", 0); } catch { }
         }
         private void ApplyUiText(string id, string value)
         {
-            if (_browser.Document == null) return;
-            try { _browser.Document.InvokeScript("eval", new object[] { "(function(){var e=document.getElementById(" + Json(id) + ");if(e)e.textContent=" + Json(value) + ";})();" }); } catch { }
+            if (_browser == null || !_browser.IsBrowserInitialized) return;
+            try { _browser.GetMainFrame().ExecuteJavaScript("(function(){var e=document.getElementById(" + Json(id) + ");if(e)e.textContent=" + Json(value) + ";})();", "veles://text", 0); } catch { }
         }
         private void ApplyNotice(string text, bool success)
         {
             _lastNotice = text;
-            if (_browser.Document == null) return;
-            try { _browser.Document.InvokeScript("eval", new object[] { "(function(){var e=document.getElementById('notice');if(e){e.textContent=" + Json(text) + ";e.style.color=" + Json(success ? "#9fe3ad" : "#e3a982") + ";}})();" }); } catch { }
+            if (_browser == null || !_browser.IsBrowserInitialized) return;
+            try { _browser.GetMainFrame().ExecuteJavaScript("(function(){var e=document.getElementById('notice');if(e){e.textContent=" + Json(text) + ";e.style.color=" + Json(success ? "#9fe3ad" : "#e3a982") + ";}})();", "veles://notice", 0); } catch { }
         }
         private string ReplaceTokens(string value) { return (value ?? string.Empty).Replace("${INSTANCE}", _builds.InstanceDirectory).Replace("/", "\\"); }
         private string SafeInstancePath(string relative) { var root = Path.GetFullPath(_builds.InstanceDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar; var full = Path.GetFullPath(Path.Combine(_builds.InstanceDirectory, relative)); if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Профиль запуска выходит за пределы сборки."); return full; }

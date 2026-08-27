@@ -6,8 +6,8 @@
     <RootNamespace>Veles.Launcher</RootNamespace>
     <AssemblyName>VelesLauncher</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <Prefer32Bit>false</Prefer32Bit>
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>true</Prefer32Bit>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <LangVersion>7.3</LangVersion>
     <ApplicationIcon>..\..\assets\icons\veles-launcher-icon.ico</ApplicationIcon>
@@ -16,6 +16,9 @@
     <Reference Include="System" /><Reference Include="System.Core" /><Reference Include="System.Drawing" /><Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup><ProjectReference Include="..\Veles.Core\Veles.Core.csproj"><Project>{00000000-0000-0000-0000-000000000001}</Project><Name>Veles.Core</Name></ProjectReference></ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CefSharp.WinForms" Version="109.1.110" />
+  </ItemGroup>
   <ItemGroup><Compile Include="Program.cs" /></ItemGroup>
   <ItemGroup>
     <Content Include="Assets\ui-icons\server.png"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
