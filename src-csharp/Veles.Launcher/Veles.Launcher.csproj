@@ -31,4 +31,12 @@
     <Content Include="WebUi\main.js"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
     <Content Include="WebUi\styles.css"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
   </ItemGroup>
+  <Target Name="CopyCefSharpRuntime" AfterTargets="Build">
+    <ItemGroup>
+      <CefRuntimeFiles Include="$(NuGetPackageRoot)cef.redist.x86\109.1.11\CEF\**\*.*" />
+      <CefSharpRuntimeFiles Include="$(NuGetPackageRoot)cefsharp.common\109.1.110\CefSharp\x86\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(CefRuntimeFiles)" DestinationFiles="@(CefRuntimeFiles-&gt;'$(TargetDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(CefSharpRuntimeFiles)" DestinationFiles="@(CefSharpRuntimeFiles-&gt;'$(TargetDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
