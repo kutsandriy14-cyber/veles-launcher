@@ -41,9 +41,13 @@ function setText(id: string, value: string): void { byId(id).textContent = value
 function render(): void {
   setText("build-title", state.buildName);
   setText("build-version", state.version === "—" ? "v—" : "v" + state.version);
+  var versionElement = byId("build-version");
+  versionElement.className = state.version === "—" ? "hero-version" : "hero-version installed-badge";
   setText("server-address", state.address);
   setText("build-state", state.buildName === "Серверная сборка" && state.version === "—" ? "Сборка сервера пока не опубликована" : state.buildName);
   setText("build-meta", state.version === "—" ? "—" : "Minecraft " + state.minecraft + " · " + state.loader + " " + state.loaderVersion);
+  var emptyState = byId("empty-state");
+  emptyState.className = state.version === "—" ? "empty-state empty" : "empty-state installed";
   setText("loader-value", state.version === "—" ? "—" : state.loader + " " + state.loaderVersion);
   setText("minecraft-value", state.minecraft);
   setText("status-value", state.status);
