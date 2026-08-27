@@ -94,14 +94,17 @@ namespace Veles.Setup
             _status = new Label { Dock = DockStyle.Fill, ForeColor = Muted, Font = new Font("Segoe UI", 9), AutoEllipsis = true, TextAlign = ContentAlignment.MiddleLeft }; _progress = new ProgressBar { Dock = DockStyle.Bottom, Height = 5, Visible = false }; var info = new Panel { Dock = DockStyle.Fill, BackColor = Background }; info.Controls.Add(_status); info.Controls.Add(_progress); root.Controls.Add(info, 0, 4);
             var footer = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Background }; footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); footer.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150)); _install = new Button { Text = "Установить", Dock = DockStyle.Fill, BackColor = Orange, ForeColor = Color.Black, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 10, FontStyle.Bold) }; _install.Click += async (s, e) => await InstallAsync(); footer.Controls.Add(new Label { Text = "Veles Setup · безопасное обновление поверх установленной версии", Dock = DockStyle.Fill, ForeColor = Muted, TextAlign = ContentAlignment.MiddleLeft }, 0, 0); footer.Controls.Add(_install, 1, 0); root.Controls.Add(footer, 0, 5); UpdateState();
         }
+        private string BaseDirectory()
+        {
+            var baseName = string.Equals(_payload.ProductId, "publisher", StringComparison.OrdinalIgnoreCase) ? "Veles Build Publisher" : "Veles Launcher"; return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", baseName);
+        }
         private string DefaultDirectory()
         {
-            var installed = ReadRecord(); if (installed != null && !string.IsNullOrWhiteSpace(installed.InstallDirectory)) return installed.InstallDirectory;
-            var baseName = string.Equals(_payload.ProductId, "publisher", StringComparison.OrdinalIgnoreCase) ? "Veles Build Publisher" : "Veles Launcher"; return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", baseName);
+            var installed = ReadRecord(); if (installed != null && !string.IsNullOrWhiteSpace(installed.InstallDirectory)) return installed.InstallDirectory; return BaseDirectory();
         }
         private void UpdateState()
         {
-            var installed = ReadRecord(); var current = installed == null ? null : installed.Version; var updating = installed != null && Directory.Exists(installed.InstallDirectory); _headline.Text = updating ? "Обновление " + _payload.DisplayName : "Установка " + _payload.DisplayName; _version.Text = (current == null ? "Новая установка" : "Установлено v" + current) + "  →  пакет v" + _payload.Version; _status.Text = updating ? "Существующая версия будет аккуратно заменена после закрытия приложения." : "Проверьте папку и нажмите «Установить»."; _install.Text = updating ? "Обновить" : "Установить";
+            var installed = ReadRecord(); var current = installed == null ? null : installed.Version; var updating = installed != null && Directory.Exists(installed.InstallDirectory); var currentText = current == null ? "Новая установка" : (current == "unknown" ? "Предыдущая версия обнаружена" : "Установлено v" + current); _headline.Text = updating ? "Обновление " + _payload.DisplayName : "Установка " + _payload.DisplayName; _version.Text = currentText + "  →  пакет v" + _payload.Version; _status.Text = updating ? "Существующая версия будет аккуратно заменена после закрытия приложения." : "Проверьте папку и нажмите «Установить»."; _install.Text = updating ? "Обновить" : "Установить";
         }
         private async Task InstallAsync()
         {
@@ -115,7 +118,12 @@ namespace Veles.Setup
             }
             catch (Exception error) { _progress.Visible = false; _status.Text = "Установка не выполнена: " + error.Message; _install.Enabled = true; }
         }
-        private InstalledRecord ReadRecord() { try { if (!File.Exists(_recordPath)) return null; return new JavaScriptSerializer().Deserialize<InstalledRecord>(File.ReadAllText(_recordPath, Encoding.UTF8)); } catch { return null; } }
+        private InstalledRecord ReadRecord()
+        {
+            try { if (File.Exists(_recordPath)) return new JavaScriptSerializer().Deserialize<InstalledRecord>(File.ReadAllText(_recordPath, Encoding.UTF8)); } catch { }
+            var legacyDirectory = BaseDirectory(); if (File.Exists(Path.Combine(legacyDirectory, _payload.TargetExecutable))) return new InstalledRecord { ProductId = _payload.ProductId, Version = "unknown", InstallDirectory = legacyDirectory };
+            return null;
+        }
         private void SaveRecord(InstalledRecord record) { Directory.CreateDirectory(Path.GetDirectoryName(_recordPath)); File.WriteAllText(_recordPath, new JavaScriptSerializer().Serialize(record), Encoding.UTF8); }
         private void CreateShortcut(string install)
         {
