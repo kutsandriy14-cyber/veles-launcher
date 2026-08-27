@@ -55,6 +55,7 @@ package("launcher", "Veles Launcher", version, "VelesLauncher.exe", "Veles Launc
     ("src-csharp/Veles.Launcher/Assets/ui-icons/update.png", "Assets/ui-icons/update.png"),
     ("src-csharp/Veles.Launcher/Assets/ui-icons/play.png", "Assets/ui-icons/play.png"),
     ("src-csharp/Veles.Launcher/Assets/ui-icons/settings.png", "Assets/ui-icons/settings.png"),
+    ("src-csharp/Veles.Launcher/Assets/ui-icons/wifi.png", "Assets/ui-icons/wifi.png"),
 ], "VelesLauncherSetup.exe")
 package("publisher", "Veles Build Publisher", version, "VelesBuildPublisher.exe", "Veles Build Publisher", [
     (("src-csharp/Veles.BuildPublisher/bin/Release/VelesBuildPublisher.exe", "src-csharp/Veles.BuildPublisher/bin/Release/Veles.BuildPublisher.exe"), "VelesBuildPublisher.exe"),
