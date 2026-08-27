@@ -92,4 +92,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = $env:GITHUB_REF_NAME
-          gh release create $tag artifacts/setup/VelesLauncherSetup.exe artifacts/setup/VelesBuildPublisherSetup.exe --title "Veles Launcher $tag — CEF Web UI" --notes "TypeScript Web UI внутри нативного Launcher. Совместимость с Windows 7–11 через CEF 109. Сборка обязательна перед запуском Minecraft."
+          $title = "Veles Launcher $tag - CEF Web UI"
+          @"
+          TypeScript Web UI inside the native Launcher.
+          Windows 7-11 compatible through CEF 109.
+          Build update is mandatory before Minecraft launch.
+          "@ | Set-Content release-notes.md
+          gh release create $tag --verify-tag --title $title --notes-file release-notes.md artifacts/setup/VelesLauncherSetup.exe artifacts/setup/VelesBuildPublisherSetup.exe
