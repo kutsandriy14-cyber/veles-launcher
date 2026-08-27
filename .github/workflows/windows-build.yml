@@ -48,7 +48,7 @@ jobs:
           Copy-Item src-csharp\Veles.Core\bin\Release\Veles.Core.dll src-csharp\Veles.Updater\bin\Release\Veles.Core.dll -Force
       - name: Build launcher
         shell: powershell
-        run: msbuild src-csharp\Veles.Launcher\Veles.Launcher.csproj /t:Build /p:BuildProjectReferences=false /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m
+        run: msbuild src-csharp\Veles.Launcher\Veles.Launcher.csproj /t:Restore,Build /p:BuildProjectReferences=false /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m
       - name: Build admin publisher
         shell: powershell
         run: msbuild src-csharp\Veles.BuildPublisher\Veles.BuildPublisher.csproj /t:Build /p:BuildProjectReferences=false /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m
