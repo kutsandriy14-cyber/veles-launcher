@@ -1,7 +1,7 @@
 [Setup]
 AppId={{B3A8B12D-4D4A-43E8-9D75-000000000002}}
 AppName=Veles Build Publisher
-AppVersion=0.1.5
+AppVersion=0.1.6
 AppPublisher=Veles PlayGame
 DefaultDirName={localappdata}\Programs\Veles Build Publisher
 DefaultGroupName=Veles Build Publisher
