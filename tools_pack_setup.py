@@ -50,6 +50,11 @@ package("launcher", "Veles Launcher", version, "VelesLauncher.exe", "Veles Launc
     (("src-csharp/Veles.Launcher/bin/Release/VelesLauncher.exe", "src-csharp/Veles.Launcher/bin/Release/Veles.Launcher.exe"), "VelesLauncher.exe"),
     ("src-csharp/Veles.Launcher/bin/Release/Veles.Core.dll", "Veles.Core.dll"),
     (("src-csharp/Veles.Updater/bin/Release/VelesLauncherUpdater.exe", "src-csharp/Veles.Updater/bin/Release/Veles.Updater.exe"), "Veles.Updater.exe"),
+    ("src-csharp/Veles.Launcher/Assets/ui-icons/server.png", "Assets/ui-icons/server.png"),
+    ("src-csharp/Veles.Launcher/Assets/ui-icons/build.png", "Assets/ui-icons/build.png"),
+    ("src-csharp/Veles.Launcher/Assets/ui-icons/update.png", "Assets/ui-icons/update.png"),
+    ("src-csharp/Veles.Launcher/Assets/ui-icons/play.png", "Assets/ui-icons/play.png"),
+    ("src-csharp/Veles.Launcher/Assets/ui-icons/settings.png", "Assets/ui-icons/settings.png"),
 ], "VelesLauncherSetup.exe")
 package("publisher", "Veles Build Publisher", version, "VelesBuildPublisher.exe", "Veles Build Publisher", [
     (("src-csharp/Veles.BuildPublisher/bin/Release/VelesBuildPublisher.exe", "src-csharp/Veles.BuildPublisher/bin/Release/Veles.BuildPublisher.exe"), "VelesBuildPublisher.exe"),
