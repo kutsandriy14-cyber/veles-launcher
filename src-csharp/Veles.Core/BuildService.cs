@@ -24,15 +24,22 @@ namespace Veles.Core
         private readonly GitHubClient _github = new GitHubClient(Owner, BuildsRepository);
         private readonly JavaScriptSerializer _json = new JavaScriptSerializer();
         private readonly HttpClient _http = new HttpClient();
+        public LauncherSettings Settings { get; private set; }
 
         public string AppDataDirectory { get; private set; }
-        public string InstanceDirectory { get { return Path.Combine(AppDataDirectory, "instances", "veles"); } }
+        public string InstanceDirectory { get { return Settings == null ? Path.Combine(AppDataDirectory, "instances", "veles") : Settings.InstanceDirectory; } }
         public string MetadataPath { get { return Path.Combine(AppDataDirectory, "installed-build.json"); } }
 
         public BuildService()
         {
             AppDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Veles Launcher");
-            Directory.CreateDirectory(AppDataDirectory);
+            Directory.CreateDirectory(AppDataDirectory); Settings = LauncherSettings.Load(AppDataDirectory);
+        }
+
+        public void SaveSettings(LauncherSettings settings)
+        {
+            if (settings == null) throw new ArgumentNullException("settings");
+            settings.Save(AppDataDirectory); Settings = settings; Directory.CreateDirectory(InstanceDirectory);
         }
 
         public async Task<BuildSnapshot> GetLatestAsync(CancellationToken cancellationToken)
@@ -76,6 +83,7 @@ namespace Veles.Core
                 var staging = Path.Combine(temp, "instance");
                 Directory.CreateDirectory(staging);
                 ZipFile.ExtractToDirectory(zipPath, staging);
+                ValidateExtractedInstance(staging, latest.Info);
                 var backup = InstanceDirectory + ".backup-" + Guid.NewGuid().ToString("N");
                 if (Directory.Exists(InstanceDirectory)) Directory.Move(InstanceDirectory, backup);
                 try
@@ -110,6 +118,16 @@ namespace Veles.Core
                     { await output.WriteAsync(buffer, 0, count, cancellationToken).ConfigureAwait(false); read += count; if (progress != null && total > 0) progress.Report((int)(read * 100L / total)); }
                 }
             }
+        }
+
+        private static void ValidateExtractedInstance(string staging, BuildInfo info)
+        {
+            var profileName = string.IsNullOrWhiteSpace(info.ModLoaderProfile) ? "launch.json" : info.ModLoaderProfile;
+            var root = Path.GetFullPath(staging).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var profilePath = Path.GetFullPath(Path.Combine(staging, profileName));
+            if (!profilePath.StartsWith(root, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Профиль запуска выходит за пределы архива.");
+            LaunchProfile.Load(profilePath);
+            JavaRuntimeService.ResolveJavaExecutable(staging, info);
         }
 
         private static ReleaseAsset FindAsset(ReleaseInfo release, string name)

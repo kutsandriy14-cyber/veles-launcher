@@ -1,28 +1,32 @@
 # Veles Launcher
 
-Нативный лаунчер для сервера Veles PlayGame и сборки TerraFirmaGreg: Modern. Проект ориентирован на Windows 7–11 и написан на C# WinForms под .NET Framework 4.8.
+Нативный лаунчер для одного сервера Veles PlayGame. Название, версия Minecraft, модлоадер, адрес сервера и описание сборки не зашиты в клиент: они читаются из последнего публичного GitHub Release репозитория сборок. Проект рассчитан на Windows 7–11 и написан на C# WinForms под .NET Framework 4.8.
 
 ## Состав
 
-Решение `VelesLauncher.sln` содержит четыре проекта. `Veles.Core` — общая библиотека без интерфейса. `Veles.Launcher` — серверный пользовательский лаунчер со встроенным обновлением Minecraft-сборки. `Veles.BuildPublisher` — полностью отдельная админ-панель, которая не входит в клиентский лаунчер и хранит GitHub-токен только в памяти. `Veles.Updater` — отдельная служебная программа, которая устанавливается рядом с Launcher внутри основного setup и проверяет обновления самого лаунчера.
+Решение `VelesLauncher.sln` содержит четыре проекта. `Veles.Core` — общая библиотека, `Veles.Launcher` — пользовательский лаунчер со встроенным обновлением Minecraft-сборки, `Veles.BuildPublisher` — отдельная админ-панель публикации, а `Veles.Updater` — служебная программа обновления самого лаунчера, устанавливаемая рядом с ним внутри главного setup.
 
 | Компонент | Репозиторий и назначение |
 |---|---|
 | Veles Launcher | `kutsandriy14-cyber/veles-launcher`; пользовательское приложение и его обновления |
-| Veles Build Publisher | Собирается из отдельного проекта; публикует `build.zip` и `build-info.txt` в `kutsandriy14-cyber/veles-modpack-releases` |
-| Veles Launcher Updater | Отдельный проект; ищет `VelesLauncherSetup.exe` в последнем релизе репозитория лаунчера |
+| Veles Build Publisher | Отдельный проект и setup; публикует `build.zip` и `build-info.txt` в `kutsandriy14-cyber/veles-modpack-releases` |
+| Veles Launcher Updater | Отдельный EXE внутри `VelesLauncherSetup.exe`; ищет `VelesLauncherSetup.exe` в последнем релизе лаунчера |
 | Minecraft-сборки | `kutsandriy14-cyber/veles-modpack-releases`; публичные GitHub Releases |
 
-## Сценарий клиента
+## Сценарий игрока
 
-При запуске лаунчер получает последний GitHub Release из репозитория сборок, скачивает `build-info.txt`, читает версию сборки, Minecraft, модлоадера и IP:порт. Если локальная сборка отсутствует или устарела, кнопка запуска заблокирована до установки актуального `build.zip`. После установки лаунчер записывает сервер в `servers.dat`. Игровой архив должен содержать `start.bat` либо другой стартовый файл, указанный через `LAUNCH_COMMAND`.
+При запуске лаунчер получает последний релиз сборки и проверяет `build-info.txt`. Если сборка отсутствует или устарела, запуск Minecraft заблокирован до обновления. Кнопка обновления скачивает архив, проверяет SHA-256, распаковывает его встроенными средствами .NET и атомарно заменяет старый экземпляр. 7-Zip, `start.bat`, `cmd.exe` и ручные команды не требуются.
 
-## Сборка
+Релиз должен содержать `launch.json` и встроенный Java runtime в `runtime/java/bin/javaw.exe` либо `java.exe`. После установки лаунчер использует эту Java и запускает валидированный профиль напрямую. В меню «Настройки» игрок может выбрать папку экземпляра и минимальный/максимальный объём RAM; настройки хранятся в `%AppData%\Veles Launcher\settings.json`.
 
-Сборка выполняется в Visual Studio на Windows с workload «.NET desktop development». Откройте `VelesLauncher.sln`, выберите `Release` и соберите нужный проект отдельно. Windows CI создаёт два распространяемых setup-файла: `VelesLauncherSetup.exe` с Launcher и Updater рядом в одной папке и `VelesBuildPublisherSetup.exe` для отдельной админ-панели.
+Если GitHub пока не содержит корректной сборки, игрок видит нейтральное сообщение «Сборка сервера пока не опубликована», версию `—` и отключённую кнопку запуска. Технические детали GitHub API в пользовательский интерфейс не выводятся.
 
-Для автоматической сборки Windows-артефактов предусмотрен `.github/workflows/windows-build.yml`. После публикации релиза лаунчера asset должен называться `VelesLauncherSetup.exe`, чтобы Updater, установленный рядом с Launcher, мог его найти.
+## Сборка и релизы
+
+Сборка выполняется в Visual Studio на Windows с workload «.NET desktop development». Откройте `VelesLauncher.sln`, выберите `Release` и соберите нужный проект. Windows CI создаёт только два распространяемых setup-файла: `VelesLauncherSetup.exe` с Launcher, Updater и Core в одной папке и `VelesBuildPublisherSetup.exe` для отдельной админ-панели.
+
+Для автоматической сборки Windows-артефактов предусмотрен `.github/workflows/windows-build.yml`. После публикации релиза лаунчера asset должен называться `VelesLauncherSetup.exe`, чтобы служебный Updater, установленный рядом с Launcher, мог его найти.
 
 ## Токен админ-панели
 
-Для публикации требуется GitHub Fine-grained Personal Access Token с правом `Contents: Read and write` только для репозитория `veles-modpack-releases`. Токен нельзя вставлять в исходный код, TXT-файлы сборок или клиентский лаунчер.
+Для публикации требуется GitHub Fine-grained Personal Access Token с правом `Contents: Read and write` только для репозитория `veles-modpack-releases`. Токен нельзя вставлять в исходный код, TXT-файлы сборок или клиентский лаунчер. В пользовательском Launcher GitHub-токен не нужен.

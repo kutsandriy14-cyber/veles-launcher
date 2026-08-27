@@ -32,6 +32,8 @@
     <Compile Include="BuildService.cs" />
     <Compile Include="GitHubClient.cs" />
     <Compile Include="MinecraftServerFile.cs" />
+    <Compile Include="JavaRuntimeService.cs" />
+    <Compile Include="LauncherSettings.cs" />
     <Compile Include="ProductInfo.cs" />
   </ItemGroup>
 </Project>
