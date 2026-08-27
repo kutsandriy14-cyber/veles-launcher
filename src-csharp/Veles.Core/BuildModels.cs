@@ -133,10 +133,14 @@ namespace Veles.Core
 
     public sealed class ReleaseInfo
     {
+        public string Id { get; set; }
         public string TagName { get; set; }
         public string Name { get; set; }
+        public string Body { get; set; }
         public string HtmlUrl { get; set; }
         public string UploadUrl { get; set; }
+        public bool IsActive { get; set; }
+        public int Priority { get; set; }
         public List<ReleaseAsset> Assets { get; set; }
     }
 

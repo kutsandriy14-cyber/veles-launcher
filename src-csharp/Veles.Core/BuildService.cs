@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 using System.Web.Script.Serialization;
 
 namespace Veles.Core
@@ -44,13 +46,29 @@ namespace Veles.Core
 
         public async Task<BuildSnapshot> GetLatestAsync(CancellationToken cancellationToken)
         {
-            var release = await _github.GetLatestReleaseAsync(cancellationToken).ConfigureAwait(false);
-            var configAsset = FindAsset(release, "build-info.txt");
-            var archiveAsset = FindAsset(release, "build.zip");
-            if (configAsset == null || archiveAsset == null) throw new InvalidDataException("Последний релиз не содержит build-info.txt и build.zip.");
-            var text = await _http.GetStringAsync(configAsset.BrowserDownloadUrl).ConfigureAwait(false);
-            var info = BuildInfo.Parse(text); info.Validate();
-            return new BuildSnapshot { Release = release, Info = info, Archive = archiveAsset, Config = configAsset };
+            var all = await GetAllAsync(cancellationToken).ConfigureAwait(false);
+            if (all.Count == 0) throw new InvalidDataException("Нет опубликованных сборок с build-info.txt и build.zip.");
+            return all[0];
+        }
+
+        public async Task<List<BuildSnapshot>> GetAllAsync(CancellationToken cancellationToken)
+        {
+            var releases = await _github.GetReleasesAsync(cancellationToken).ConfigureAwait(false);
+            var result = new List<BuildSnapshot>();
+            foreach (var release in releases)
+            {
+                var configAsset = FindAsset(release, "build-info.txt");
+                var archiveAsset = FindAsset(release, "build.zip");
+                if (configAsset == null || archiveAsset == null) continue;
+                try
+                {
+                    var text = await _http.GetStringAsync(configAsset.BrowserDownloadUrl).ConfigureAwait(false);
+                    var info = BuildInfo.Parse(text); info.Validate();
+                    result.Add(new BuildSnapshot { Release = release, Info = info, Archive = archiveAsset, Config = configAsset });
+                }
+                catch (Exception) { }
+            }
+            return result.OrderBy(x => x.Release.IsActive ? 0 : 1).ThenBy(x => x.Release.Priority).ThenByDescending(x => x.Info.BuildVersion, StringComparer.OrdinalIgnoreCase).ToList();
         }
 
         public InstalledBuild ReadInstalled()

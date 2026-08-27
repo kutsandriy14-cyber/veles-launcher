@@ -62,8 +62,9 @@ namespace Veles.BuildPublisher
             SetMetadataFieldsReadOnly();
             var bottomPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Padding = new Padding(0, 15, 0, 0) };
             var access = Button("Настроить доступ", Color.FromArgb(43, 28, 20), TextColor); access.Width = 220; access.Height = 54; access.Font = new Font("Segoe UI", 14); access.Click += (s, e) => ConfigureAccess();
+            var manage = Button("Управление сборками", Color.FromArgb(43, 28, 20), TextColor); manage.Width = 250; manage.Height = 54; manage.Font = new Font("Segoe UI", 14); manage.Click += (s, e) => OpenReleaseManager();
             _publish = Button("Опубликовать сборку", Orange, Color.Black); _publish.Width = 320; _publish.Height = 54; _publish.Font = new Font("Segoe UI", 14, FontStyle.Bold); _publish.Margin = new Padding(25, 0, 0, 0); _publish.Click += async (s, e) => await PublishAsync();
-            bottomPanel.Controls.Add(access); bottomPanel.Controls.Add(_publish); root.Controls.Add(bottomPanel, 0, 15);
+            bottomPanel.Controls.Add(access); bottomPanel.Controls.Add(manage); bottomPanel.Controls.Add(_publish); root.Controls.Add(bottomPanel, 0, 15);
             _accessStatus = Label("Доступ GitHub не настроен", 12, FontStyle.Regular, Muted); root.Controls.Add(_accessStatus, 0, 16);
             _status = Label("Готово. Выберите ZIP с metadata внутри.", 12, FontStyle.Regular, Muted); _status.AutoSize = false; _status.Dock = DockStyle.Fill; root.Controls.Add(_status, 0, 17);
         }
@@ -126,12 +127,52 @@ namespace Veles.BuildPublisher
         }
 
         private void ValidateArchive() { BuildArchiveMetadata.Read(_selectedZip); }
+        private void OpenReleaseManager()
+        {
+            if (string.IsNullOrWhiteSpace(_tokenValue)) { Warn("Сначала настройте доступ GitHub отдельной кнопкой."); return; }
+            using (var dialog = new ReleaseManagerForm(_tokenValue)) dialog.ShowDialog(this);
+        }
+
         private void ConfigureAccess()
         {
             using (var dialog = new TokenForm()) if (dialog.ShowDialog(this) == DialogResult.OK) { _tokenValue = dialog.Token; _accessStatus.Text = "Доступ GitHub настроен только на время работы панели"; _accessStatus.ForeColor = Color.LightGreen; }
         }
         private void Warn(string message) { MessageBox.Show(this, message, "Проверьте данные", MessageBoxButtons.OK, MessageBoxIcon.Warning); _status.Text = message; }
         private static string ComputeSha256(string path) { using (var sha = SHA256.Create()) using (var stream = File.OpenRead(path)) return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", string.Empty).ToLowerInvariant(); }
+    }
+
+    internal sealed class ReleaseManagerForm : Form
+    {
+        private readonly GitHubClient _api; private readonly ListBox _list; private readonly Label _status; private System.Collections.Generic.List<ReleaseInfo> _releases;
+        public ReleaseManagerForm(string token)
+        {
+            _api = new GitHubClient("kutsandriy14-cyber", "veles-modpack-releases", token); Text = "Управление сборками"; Width = 1000; Height = 700; MinimumSize = new Size(900, 600); BackColor = Color.FromArgb(12, 10, 9); ForeColor = Color.White; StartPosition = FormStartPosition.CenterParent;
+            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(32), ColumnCount = 1, RowCount = 3, BackColor = BackColor }; root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 70)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 35)); Controls.Add(root);
+            _list = new ListBox { Dock = DockStyle.Fill, BackColor = Color.FromArgb(28, 25, 23), ForeColor = Color.White, Font = new Font("Segoe UI", 14), BorderStyle = BorderStyle.FixedSingle }; root.Controls.Add(_list, 0, 0);
+            var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, Padding = new Padding(0, 10, 0, 0) }; var first = Action("Поставить первой", 190); first.Click += async (s, e) => await SetSelectedAsync(true, 1); var inactive = Action("Сделать неактивной", 210); inactive.Click += async (s, e) => await SetSelectedAsync(false, 9999); var edit = Action("Редактировать", 170); edit.Click += async (s, e) => await EditSelectedAsync(); var remove = Action("Удалить", 120); remove.Click += async (s, e) => await DeleteSelectedAsync(); actions.Controls.Add(first); actions.Controls.Add(inactive); actions.Controls.Add(edit); actions.Controls.Add(remove); root.Controls.Add(actions, 0, 1);
+            _status = new Label { Text = "Загрузка списка…", Dock = DockStyle.Fill, ForeColor = Color.FromArgb(168, 162, 158), TextAlign = ContentAlignment.MiddleLeft }; root.Controls.Add(_status, 0, 2); Shown += async (s, e) => await LoadAsync();
+        }
+        private Button Action(string text, int width) { return new Button { Text = text, Width = width, Height = 44, BackColor = Color.FromArgb(43, 28, 20), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 10, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) }; }
+        private async Task LoadAsync() { try { _releases = await _api.GetReleasesAsync(CancellationToken.None); _list.Items.Clear(); foreach (var release in _releases) _list.Items.Add((release.IsActive ? "АКТИВНА" : "НЕАКТИВНА") + "  |  приоритет " + release.Priority + "  |  " + release.Name + "  [" + release.TagName + "]"); _status.Text = "Найдено сборок: " + _releases.Count + ". Активная с меньшим приоритетом будет показана первой."; } catch (Exception error) { _status.Text = "Ошибка: " + error.Message; } }
+        private async Task SetSelectedAsync(bool active, int priority) { var selected = Selected(); if (selected == null) return; try { await _api.UpdateReleaseAsync(selected.Id, selected.Name, Markers(selected.Body, active, priority), CancellationToken.None); await LoadAsync(); } catch (Exception error) { _status.Text = "Ошибка изменения статуса: " + error.Message; } }
+        private async Task EditSelectedAsync() { var selected = Selected(); if (selected == null) return; using (var form = new ReleaseEditForm(selected)) if (form.ShowDialog(this) == DialogResult.OK) try { await _api.UpdateReleaseAsync(selected.Id, form.ReleaseName, Markers(form.Body, form.Active, form.Priority), CancellationToken.None); await LoadAsync(); } catch (Exception error) { _status.Text = "Ошибка редактирования: " + error.Message; } }
+        private async Task DeleteSelectedAsync() { var selected = Selected(); if (selected == null) return; if (MessageBox.Show(this, "Удалить релиз и его tag? Сборку можно будет опубликовать заново.", "Подтверждение удаления", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return; try { await _api.DeleteReleaseAsync(selected.Id, CancellationToken.None); if (!string.IsNullOrWhiteSpace(selected.TagName)) await _api.DeleteTagAsync(selected.TagName, CancellationToken.None); await LoadAsync(); } catch (Exception error) { _status.Text = "Ошибка удаления: " + error.Message; } }
+        private ReleaseInfo Selected() { var index = _list.SelectedIndex; return _releases != null && index >= 0 && index < _releases.Count ? _releases[index] : null; }
+        private static string Markers(string body, bool active, int priority) { var lines = new System.Collections.Generic.List<string>(); using (var reader = new StringReader(body ?? string.Empty)) { string line; while ((line = reader.ReadLine()) != null) if (!line.TrimStart().StartsWith("VELES_ACTIVE=", StringComparison.OrdinalIgnoreCase) && !line.TrimStart().StartsWith("VELES_PRIORITY=", StringComparison.OrdinalIgnoreCase)) lines.Add(line); } lines.Insert(0, "VELES_ACTIVE=" + (active ? "1" : "0")); lines.Insert(1, "VELES_PRIORITY=" + priority); return string.Join(Environment.NewLine, lines) + Environment.NewLine; }
+    }
+
+    internal sealed class ReleaseEditForm : Form
+    {
+        private readonly TextBox _name; private readonly NumericUpDown _priority; private readonly CheckBox _active; public string ReleaseName { get { return _name.Text.Trim(); } } public bool Active { get { return _active.Checked; } } public int Priority { get { return (int)_priority.Value; } } public string Body { get; private set; }
+        public ReleaseEditForm(ReleaseInfo release)
+        {
+            Body = release.Body ?? string.Empty; Text = "Редактирование сборки"; Width = 620; Height = 300; BackColor = Color.FromArgb(12, 10, 9); ForeColor = Color.White; StartPosition = FormStartPosition.CenterParent; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false; MinimizeBox = false;
+            var root = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 2, RowCount = 4, BackColor = BackColor }; root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 220)); root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 52)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 52)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 52)); root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); Controls.Add(root);
+            root.Controls.Add(new Label { Text = "Название релиза", Dock = DockStyle.Fill, ForeColor = Color.White, TextAlign = ContentAlignment.MiddleLeft }, 0, 0); _name = new TextBox { Text = release.Name, Dock = DockStyle.Fill, BackColor = Color.FromArgb(28, 25, 23), ForeColor = Color.White }; root.Controls.Add(_name, 1, 0);
+            root.Controls.Add(new Label { Text = "Приоритет (1 = первый)", Dock = DockStyle.Fill, ForeColor = Color.White, TextAlign = ContentAlignment.MiddleLeft }, 0, 1); _priority = new NumericUpDown { Value = Math.Max(1, Math.Min(9999, release.Priority)), Minimum = 1, Maximum = 9999, Dock = DockStyle.Fill, BackColor = Color.FromArgb(28, 25, 23), ForeColor = Color.White }; root.Controls.Add(_priority, 1, 1);
+            _active = new CheckBox { Text = "Сборка активна", Checked = release.IsActive, Dock = DockStyle.Fill, ForeColor = Color.White }; root.Controls.Add(_active, 0, 2); root.SetColumnSpan(_active, 2);
+            var save = new Button { Text = "Сохранить", Width = 150, Height = 40, Anchor = AnchorStyles.Right, BackColor = Color.FromArgb(249, 115, 22), ForeColor = Color.Black, FlatStyle = FlatStyle.Flat }; save.Click += (s, e) => { if (string.IsNullOrWhiteSpace(ReleaseName)) { MessageBox.Show(this, "Название не может быть пустым.", "Редактирование", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; } DialogResult = DialogResult.OK; Close(); }; root.Controls.Add(save, 1, 3); AcceptButton = save;
+        }
     }
 
     internal sealed class TokenForm : Form

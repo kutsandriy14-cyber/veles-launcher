@@ -29,6 +29,43 @@ namespace Veles.Core
             return ToRelease(obj);
         }
 
+        public async Task<System.Collections.Generic.List<ReleaseInfo>> GetReleasesAsync(CancellationToken cancellationToken)
+        {
+            var url = string.Format("https://api.github.com/repos/{0}/{1}/releases?per_page=100", _owner, _repo);
+            var raw = await SendAsync(HttpMethod.Get, url, null, "application/vnd.github+json", cancellationToken).ConfigureAwait(false);
+            var values = _json.DeserializeObject(raw) as object[];
+            var releases = new System.Collections.Generic.List<ReleaseInfo>();
+            if (values != null) foreach (var value in values)
+            {
+                var obj = value as System.Collections.Generic.Dictionary<string, object>;
+                if (obj != null) releases.Add(ToRelease(obj));
+            }
+            return releases;
+        }
+
+        public async Task<ReleaseInfo> UpdateReleaseAsync(string releaseId, string name, string body, CancellationToken cancellationToken)
+        {
+            EnsureToken();
+            var payload = _json.Serialize(new { name = name, body = body, draft = false, prerelease = false });
+            var url = string.Format("https://api.github.com/repos/{0}/{1}/releases/{2}", _owner, _repo, Uri.EscapeDataString(releaseId));
+            var raw = await SendAsync(new HttpMethod("PATCH"), url, payload, "application/json", cancellationToken).ConfigureAwait(false);
+            return ToRelease(_json.DeserializeObject(raw) as System.Collections.Generic.Dictionary<string, object>);
+        }
+
+        public async Task DeleteReleaseAsync(string releaseId, CancellationToken cancellationToken)
+        {
+            EnsureToken();
+            var url = string.Format("https://api.github.com/repos/{0}/{1}/releases/{2}", _owner, _repo, Uri.EscapeDataString(releaseId));
+            await SendAsync(HttpMethod.Delete, url, null, "application/vnd.github+json", cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task DeleteTagAsync(string tag, CancellationToken cancellationToken)
+        {
+            EnsureToken();
+            var url = string.Format("https://api.github.com/repos/{0}/{1}/git/refs/tags/{2}", _owner, _repo, Uri.EscapeDataString(tag));
+            await SendAsync(HttpMethod.Delete, url, null, "application/vnd.github+json", cancellationToken).ConfigureAwait(false);
+        }
+
         public async Task<ReleaseInfo> CreateReleaseAsync(string tag, string name, string body, CancellationToken cancellationToken)
         {
             EnsureToken();
@@ -99,7 +136,8 @@ namespace Veles.Core
         private static ReleaseInfo ToRelease(System.Collections.Generic.Dictionary<string, object> obj)
         {
             if (obj == null) throw new InvalidOperationException("GitHub вернул пустой релиз.");
-            var release = new ReleaseInfo { TagName = StringValue(obj, "tag_name"), Name = StringValue(obj, "name"), HtmlUrl = StringValue(obj, "html_url"), UploadUrl = StringValue(obj, "upload_url"), Assets = new System.Collections.Generic.List<ReleaseAsset>() };
+            var body = StringValue(obj, "body");
+            var release = new ReleaseInfo { Id = StringValue(obj, "id"), TagName = StringValue(obj, "tag_name"), Name = StringValue(obj, "name"), Body = body, HtmlUrl = StringValue(obj, "html_url"), UploadUrl = StringValue(obj, "upload_url"), IsActive = ParseMarker(body, "VELES_ACTIVE", true), Priority = ParseIntMarker(body, "VELES_PRIORITY", 9999), Assets = new System.Collections.Generic.List<ReleaseAsset>() };
             var assets = obj.ContainsKey("assets") ? obj["assets"] as object[] : null;
             if (assets != null) foreach (var value in assets)
             {
@@ -111,5 +149,7 @@ namespace Veles.Core
             return release;
         }
         private static string StringValue(System.Collections.Generic.Dictionary<string, object> value, string key) { object result; return value != null && value.TryGetValue(key, out result) && result != null ? Convert.ToString(result) : string.Empty; }
+        private static bool ParseMarker(string body, string key, bool defaultValue) { var marker = key + "="; using (var reader = new StringReader(body ?? string.Empty)) { string line; while ((line = reader.ReadLine()) != null) { line = line.Trim(); if (line.StartsWith(marker, StringComparison.OrdinalIgnoreCase)) { var value = line.Substring(marker.Length).Trim(); return value == "1" || value.Equals("true", StringComparison.OrdinalIgnoreCase); } } } return defaultValue; }
+        private static int ParseIntMarker(string body, string key, int defaultValue) { var marker = key + "="; using (var reader = new StringReader(body ?? string.Empty)) { string line; while ((line = reader.ReadLine()) != null) { line = line.Trim(); if (line.StartsWith(marker, StringComparison.OrdinalIgnoreCase)) { int value; return int.TryParse(line.Substring(marker.Length).Trim(), out value) ? value : defaultValue; } } } return defaultValue; }
     }
 }
