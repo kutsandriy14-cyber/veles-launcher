@@ -47,8 +47,9 @@ namespace Veles.Core
         public async Task<BuildSnapshot> GetLatestAsync(CancellationToken cancellationToken)
         {
             var all = await GetAllAsync(cancellationToken).ConfigureAwait(false);
-            if (all.Count == 0) throw new InvalidDataException("Нет опубликованных сборок с build-info.txt и build.zip.");
-            return all[0];
+            var active = all.FirstOrDefault(x => x.Release.IsActive);
+            if (active == null) throw new InvalidDataException("Нет активной сборки с build-info.txt и build.zip.");
+            return active;
         }
 
         public async Task<List<BuildSnapshot>> GetAllAsync(CancellationToken cancellationToken)
