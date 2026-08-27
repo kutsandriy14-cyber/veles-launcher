@@ -4,7 +4,7 @@ namespace Veles.Core
 {
     public static class ProductInfo
     {
-        public const string VersionText = "0.1.9";
+        public const string VersionText = "0.2.0";
         public static Version Version { get { return new Version(VersionText); } }
     }
 }
