@@ -78,7 +78,7 @@ namespace Veles.Setup
 
     internal sealed class SetupForm : Form
     {
-        private readonly SetupPayload _payload; private readonly string _recordPath; private readonly TextBox _path; private readonly Label _headline; private readonly Label _version; private readonly Label _status; private readonly ProgressBar _progress; private readonly Button _install; private readonly Color Orange = Color.FromArgb(249, 115, 22); private readonly Color Background = Color.FromArgb(14, 16, 20); private readonly Color Card = Color.FromArgb(29, 32, 38); private readonly Color Muted = Color.FromArgb(170, 176, 185);
+        private readonly SetupPayload _payload; private readonly string _recordPath; private TextBox _path; private Label _headline; private Label _version; private Label _status; private ProgressBar _progress; private Button _install; private readonly Color Orange = Color.FromArgb(249, 115, 22); private readonly Color Background = Color.FromArgb(14, 16, 20); private readonly Color Card = Color.FromArgb(29, 32, 38); private readonly Color Muted = Color.FromArgb(170, 176, 185);
         public SetupForm(SetupPayload payload)
         {
             _payload = payload ?? throw new ArgumentNullException("payload"); _recordPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Veles", "installations", payload.ProductId + ".json");
