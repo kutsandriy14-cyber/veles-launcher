@@ -49,6 +49,18 @@ jobs:
       - name: Build launcher
         shell: powershell
         run: msbuild src-csharp\Veles.Launcher\Veles.Launcher.csproj /t:Restore,Build /p:BuildProjectReferences=false /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m
+      - name: Verify CefSharp runtime output
+        shell: powershell
+        run: |
+          $output = Resolve-Path src-csharp\Veles.Launcher\bin\Release
+          $required = @('libcef.dll','icudtl.dat','resources.pak','chrome_100_percent.pak','chrome_200_percent.pak','CefSharp.Core.Runtime.dll','CefSharp.BrowserSubprocess.exe','CefSharp.BrowserSubprocess.Core.dll','locales\ru.pak')
+          foreach ($relative in $required) {
+            $file = Join-Path $output $relative
+            if (-not (Test-Path $file -PathType Leaf)) { throw "Missing CEF runtime file: $relative" }
+          }
+          $libcef = Get-Item (Join-Path $output 'libcef.dll')
+          if ($libcef.Length -lt 100MB) { throw "libcef.dll is unexpectedly small: $($libcef.Length) bytes" }
+          Write-Host "CEF runtime verified: $($libcef.Length) bytes"
       - name: Build admin publisher
         shell: powershell
         run: msbuild src-csharp\Veles.BuildPublisher\Veles.BuildPublisher.csproj /t:Build /p:BuildProjectReferences=false /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=bin\Release\ /p:BaseOutputPath=bin\ /p:TargetFrameworkVersion=v4.8 /m
