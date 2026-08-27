@@ -23,7 +23,7 @@
         <div class="server-address" id="server-address">—</div><p class="panel-hint">Адрес появится после публикации сборки</p><button class="outline-button card-button" id="copy-button"><svg viewBox="0 0 24 24"><rect x="8" y="7" width="11" height="13" rx="1"/><path d="M16 7V5H5v13h3"/></svg>Копировать</button>
       </article>
       <article class="build-card panel">
-        <div class="panel-heading"><span class="circle-icon cube-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="m16 5 10 5.5v11L16 27 6 21.5v-11L16 5Z"/><path d="m6 10.5 10 5.5 10-5.5M16 16v11"/></svg></span><h2>СБОРКА И ОБНОВЛЕНИЕ</h2></div>
+        <div class="panel-heading" id="build-heading"><span class="circle-icon cube-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="m16 5 10 5.5v11L16 27 6 21.5v-11L16 5Z"/><path d="m6 10.5 10 5.5 10-5.5M16 16v11"/></svg></span><h2>СБОРКА И ОБНОВЛЕНИЕ</h2></div>
         <div class="empty-state empty" id="empty-state"><div class="empty-illustration" aria-hidden="true"><svg viewBox="0 0 180 150"><path d="M45 48 91 27l48 21-48 22-46-22Z"/><path d="M45 48v52l46 22V70L45 48Z"/><path d="M139 48v52l-48 22V70l48-22Z"/><path d="M91 27v43"/><path class="ink-line" d="M70 60h42M78 85q13 13 26 0"/><circle cx="76" cy="78" r="4"/><circle cx="106" cy="78" r="4"/><path class="ray" d="m50 24-7-12m91 12 7-12m-56 4-2-13m35 13 2-13"/></svg></div><h3 id="build-state">Сборка сервера пока не опубликована</h3><p id="build-meta">—</p></div>
         <div class="build-actions"><button class="outline-button primary-outline" id="update-button"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14-4L4 9"/><path d="M4 5v4h4M4 13a8 8 0 0 0 14 4l2-2"/><path d="M20 19v-4h-4"/></svg>Проверить и обновить сборку</button><button class="filled-button disabled" id="launch-button" disabled><svg viewBox="0 0 24 24"><path d="m9 6 10 6-10 6V6Z"/></svg>Запустить Minecraft</button></div>
       </article>
@@ -32,6 +32,7 @@
     <div class="notice" id="notice">Сборка сервера пока не опубликована.</div>
     <footer>Veles PlayGame <span>·</span> Публичные релизы сборок <span>·</span> GitHub Releases</footer>
   </main>
+  <div class="builds-modal" id="builds-modal" aria-hidden="true"><div class="builds-dialog"><div class="builds-dialog-head"><h2>Сборки сервера</h2><button class="modal-close" id="builds-close">×</button></div><div class="builds-list" id="builds-list"></div></div></div>
   <script src="main.js"></script>
 </body>
 </html>

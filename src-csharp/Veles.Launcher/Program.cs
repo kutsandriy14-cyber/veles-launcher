@@ -64,12 +64,15 @@ namespace Veles.Launcher
         {
             try
             {
-                _latest = await _builds.GetLatestAsync(CancellationToken.None);
+                var allBuilds = await _builds.GetAllAsync(CancellationToken.None);
+                _latest = null;
+                foreach (var candidate in allBuilds) if (candidate.Release.IsActive) { _latest = candidate; break; }
+                if (_latest == null) throw new InvalidDataException("Нет активной сборки с build-info.txt и build.zip.");
                 var info = _latest.Info;
                 var installed = _builds.ReadInstalled();
                 var needs = _builds.NeedsUpdate(_latest);
                 var buildName = string.IsNullOrWhiteSpace(info.BuildName) ? "Серверная сборка" : info.BuildName.Trim();
-                var state = "{\"buildName\":" + Json(buildName) + ",\"version\":" + Json(info.BuildVersion) + ",\"address\":" + Json(info.ServerAddress) + ",\"minecraft\":" + Json(info.MinecraftVersion) + ",\"loader\":" + Json(info.ModLoader) + ",\"loaderVersion\":" + Json(info.ModLoaderVersion) + ",\"status\":" + Json(needs ? "Нужно обновить" : "Готово v" + (installed == null ? info.BuildVersion : installed.Version)) + ",\"installed\":" + ((!needs).ToString().ToLowerInvariant()) + ",\"needsUpdate\":" + needs.ToString().ToLowerInvariant() + "}";
+                var state = "{\"buildName\":" + Json(buildName) + ",\"version\":" + Json(info.BuildVersion) + ",\"address\":" + Json(info.ServerAddress) + ",\"minecraft\":" + Json(info.MinecraftVersion) + ",\"loader\":" + Json(info.ModLoader) + ",\"loaderVersion\":" + Json(info.ModLoaderVersion) + ",\"status\":" + Json(needs ? "Нужно обновить" : "Готово v" + (installed == null ? info.BuildVersion : installed.Version)) + ",\"installed\":" + ((!needs).ToString().ToLowerInvariant()) + ",\"needsUpdate\":" + needs.ToString().ToLowerInvariant() + ",\"builds\":[" + BuildListJson(allBuilds) + "]}";
                 ApplyState(state);
                 ApplyNotice(needs ? "Доступна новая сборка. Вход на сервер заблокирован до обновления." : "Сборка актуальна. Можно запускать игру.", needs ? false : true);
             }
@@ -181,6 +184,7 @@ namespace Veles.Launcher
             if (_browser == null || !_browser.IsBrowserInitialized) return;
             try { _browser.GetMainFrame().ExecuteJavaScriptAsync("(function(){var e=document.getElementById('notice');if(e){e.textContent=" + Json(text) + ";e.style.color=" + Json(success ? "#9fe3ad" : "#e3a982") + ";}})();", "veles://notice", 0); } catch { }
         }
+        private string BuildListJson(System.Collections.Generic.List<BuildSnapshot> builds) { var items = new System.Collections.Generic.List<string>(); foreach (var item in builds) { var name = string.IsNullOrWhiteSpace(item.Info.BuildName) ? "Серверная сборка" : item.Info.BuildName.Trim(); items.Add("{\"name\":" + Json(name) + ",\"version\":" + Json(item.Info.BuildVersion) + ",\"active\":" + item.Release.IsActive.ToString().ToLowerInvariant() + ",\"priority\":" + item.Release.Priority + "}"); } return string.Join(",", items); }
         private string ReplaceTokens(string value) { return (value ?? string.Empty).Replace("${INSTANCE}", _builds.InstanceDirectory).Replace("/", "\\"); }
         private string SafeInstancePath(string relative) { var root = Path.GetFullPath(_builds.InstanceDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar; var full = Path.GetFullPath(Path.Combine(_builds.InstanceDirectory, relative)); if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Профиль запуска выходит за пределы сборки."); return full; }
         private static string Quote(string value) { return "\"" + (value ?? string.Empty).Replace("\"", "\\\"") + "\""; }

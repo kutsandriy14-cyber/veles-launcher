@@ -8,7 +8,8 @@ var state = {
     loaderVersion: "",
     status: "Нет сборки",
     installed: false,
-    needsUpdate: true
+    needsUpdate: true,
+    builds: []
 };
 function byId(id) {
     var element = document.getElementById(id);
@@ -45,12 +46,37 @@ function render() {
     setText("loader-value", state.version === "—" ? "—" : state.loader + " " + state.loaderVersion);
     setText("minecraft-value", state.minecraft);
     setText("status-value", state.status);
+    renderBuilds();
     var launch = byId("launch-button");
     launch.disabled = !state.installed || state.needsUpdate;
     launch.className = launch.disabled ? "secondary-button disabled" : "secondary-button";
     var update = byId("update-button");
     update.textContent = state.needsUpdate ? "Обновить сборку сервера" : "Проверить обновления";
 }
+function renderBuilds() {
+    var list = byId("builds-list");
+    while (list.firstChild) {
+        list.removeChild(list.firstChild);
+    }
+    if (!state.builds || state.builds.length === 0) {
+        list.textContent = "Опубликованных сборок пока нет.";
+        return;
+    }
+    for (var i = 0; i < state.builds.length; i++) {
+        var item = state.builds[i];
+        var row = document.createElement("div");
+        row.className = item.active ? "build-row active" : "build-row";
+        var title = document.createElement("strong");
+        title.textContent = item.name + "  v" + item.version;
+        var meta = document.createElement("span");
+        meta.textContent = (item.active ? "АКТИВНА" : "НЕАКТИВНА") + "  ·  приоритет " + item.priority;
+        row.appendChild(title);
+        row.appendChild(meta);
+        list.appendChild(row);
+    }
+}
+function openBuilds() { var modal = byId("builds-modal"); modal.className = "builds-modal open"; modal.setAttribute("aria-hidden", "false"); }
+function closeBuilds() { var modal = byId("builds-modal"); modal.className = "builds-modal"; modal.setAttribute("aria-hidden", "true"); }
 function updateBuild() {
     var button = byId("update-button");
     button.disabled = true;
@@ -91,4 +117,6 @@ byId("launch-button").onclick = launchGame;
 byId("settings-button").onclick = openSettings;
 byId("site-button").onclick = openSite;
 byId("copy-button").onclick = copyAddress;
+byId("build-heading").onclick = openBuilds;
+byId("builds-close").onclick = closeBuilds;
 render();
