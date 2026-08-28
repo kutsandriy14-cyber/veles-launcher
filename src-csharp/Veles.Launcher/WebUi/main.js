@@ -25,6 +25,10 @@ function bridge(action) {
             nativeWindow.velesBridge.invoke(action);
             return;
         }
+        if (nativeWindow.velesBridge && nativeWindow.velesBridge.notify) {
+            nativeWindow.velesBridge.notify(action);
+            return;
+        }
         if (nativeWindow.external && nativeWindow.external.notify) {
             nativeWindow.external.notify(action);
             return;

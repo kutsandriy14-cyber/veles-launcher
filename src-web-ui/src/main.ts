@@ -41,6 +41,7 @@ function bridge(action: string): void {
   try {
     var nativeWindow = window as any;
     if (nativeWindow.velesBridge && nativeWindow.velesBridge.invoke) { nativeWindow.velesBridge.invoke(action); return; }
+    if (nativeWindow.velesBridge && nativeWindow.velesBridge.notify) { nativeWindow.velesBridge.notify(action); return; }
     if (nativeWindow.external && nativeWindow.external.notify) { nativeWindow.external.notify(action); return; }
   } catch (_) { /* Native bridge is optional in browser preview. */ }
 }

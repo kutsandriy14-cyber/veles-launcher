@@ -197,6 +197,7 @@ namespace Veles.Launcher
     {
         private readonly LauncherForm _form;
         public LauncherBridge(LauncherForm form) { _form = form; }
+        public void Invoke(string action) { Notify(action); }
         public void Notify(string action)
         {
             if (action == "build.update") _form.BeginInvoke(new Action(async () => await _form.InstallAsync()));
